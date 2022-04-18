@@ -137,10 +137,13 @@
 						if (this.omdbData.data.Metascore != null && this.omdbData.data.Metascore != "N/A")
 							this.omdbData.metascore = this.omdbData.data.Metascore;
 
-						this.addWikiDataReport();
 
 						this.wikiData.state = 2;
+					}else{
+						this.wiki = null;
 					}
+
+					this.addWikiDataReport();
 				}
 
 				// Stop
@@ -193,8 +196,9 @@
 				section.append(heading);
 
 				const headerLink = letterboxd.helpers.createElement('a', {
-					href: this.wiki.item.value
 				});
+				if (this.wiki != null)
+					headerLink.setAttribute('href', this.wiki.item.value);
 				heading.append(headerLink);
 
 				const headerText = letterboxd.helpers.createElement('span', {
@@ -210,93 +214,101 @@
 				});
 				section.append(ul);
 
-				// Tomato
-				if (this.wiki.Rotten_Tomatoes_ID != null){
-					ul.append(letterboxd.helpers.createReportBox("Tomato","No Issues","good"));
-				}else{
-					ul.append(letterboxd.helpers.createReportBox("Tomato","Missing Rotten Tomatoes ID","bad"));
-				}
-
-				// Meta
-				if (this.wiki.Metacritic_ID != null){
-					ul.append(letterboxd.helpers.createReportBox("Meta","No Issues","good"));
-				}else if(this.omdbData.metascore != null){
-					ul.append(letterboxd.helpers.createReportBox("Meta","Missing Metacritic ID, but found in OMDb","bad"));
-				}else{
-					ul.append(letterboxd.helpers.createReportBox("Meta","Possibly missing Metacritic ID","warn"));
-				}
-
-				// MPAA
-				if (this.wiki.MPAA_film_rating != null){
-					ul.append(letterboxd.helpers.createReportBox("MPAA","No Issues","good"));
-				}else{
-					ul.append(letterboxd.helpers.createReportBox("MPAA","Missing MPAA rating","warn"));
-				}
-
-				// Country of Origin Date
-				var hasOriginDate = false;
-				if (this.wiki.Publication_Date_Origin != null){
-					hasOriginDate = true;
-					if (this.wiki.Publication_Date_Origin.value.includes("-01-01T")){
-						ul.append(letterboxd.helpers.createReportBox("Origin Date","Country of Origin release date missing full date (year only)","warn",releaseInfoUrl));
+				if (this.wiki != null){
+					// Tomato
+					if (this.wiki.Rotten_Tomatoes_ID != null){
+						ul.append(letterboxd.helpers.createReportBox("Tomato","No Issues","good"));
 					}else{
-						ul.append(letterboxd.helpers.createReportBox("Origin Date","No Issues","good",releaseInfoUrl));
+						ul.append(letterboxd.helpers.createReportBox("Tomato","Missing Rotten Tomatoes ID","bad"));
+					}
+
+					// Meta
+					if (this.wiki.Metacritic_ID != null){
+						ul.append(letterboxd.helpers.createReportBox("Meta","No Issues","good"));
+					}else if(this.omdbData.metascore != null){
+						ul.append(letterboxd.helpers.createReportBox("Meta","Missing Metacritic ID, but found in OMDb","bad"));
+					}else{
+						ul.append(letterboxd.helpers.createReportBox("Meta","Possibly missing Metacritic ID","warn"));
+					}
+
+					// MPAA
+					if (this.wiki.MPAA_film_rating != null){
+						ul.append(letterboxd.helpers.createReportBox("MPAA","No Issues","good"));
+					}else{
+						ul.append(letterboxd.helpers.createReportBox("MPAA","Missing MPAA rating","warn"));
+					}
+
+					// Country of Origin Date
+					var hasOriginDate = false;
+					if (this.wiki.Publication_Date_Origin != null){
+						hasOriginDate = true;
+						if (this.wiki.Publication_Date_Origin.value.includes("-01-01T")){
+							ul.append(letterboxd.helpers.createReportBox("Origin Date","Country of Origin release date missing full date (year only)","warn",releaseInfoUrl));
+						}else{
+							ul.append(letterboxd.helpers.createReportBox("Origin Date","No Issues","good",releaseInfoUrl));
+						}
+					}else{
+						ul.append(letterboxd.helpers.createReportBox("Origin Date","Missing Country of Origin release date","bad",releaseInfoUrl));
+					}
+
+					// USA Date
+					var hasUSDate = false;
+					if (this.wiki.Publication_Date != null){
+						hasUSDate = true;
+						if (this.wiki.Publication_Date.value.includes("-01-01T")){
+							ul.append(letterboxd.helpers.createReportBox("USA Date","US release date missing full date (year only)","warn",releaseInfoUrl));
+						}else{
+							ul.append(letterboxd.helpers.createReportBox("USA Date","No Issues","good",releaseInfoUrl));
+						}
+					}else{
+						if (hasOriginDate){
+							ul.append(letterboxd.helpers.createReportBox("USA Date","Missing US release date","warn",releaseInfoUrl));
+						}else{
+							ul.append(letterboxd.helpers.createReportBox("USA Date","Missing US release date","bad",releaseInfoUrl));
+						}
+					}
+
+					// Backup Date
+					if (this.wiki.Publication_Date_Backup != null){
+						if (this.wiki.Publication_Date_Backup.value.includes("-01-01T")){
+							var state  = "warn";
+							if (hasUSDate || hasOriginDate){
+								state  = "good";
+							}
+							ul.append(letterboxd.helpers.createReportBox("Backup Date","Backup release date missing full date (year only)",state,releaseInfoUrl));
+						}else{
+							ul.append(letterboxd.helpers.createReportBox("Backup Date","No Issues","good",releaseInfoUrl));
+						}
+					}else{
+						if (hasUSDate || hasOriginDate){
+							ul.append(letterboxd.helpers.createReportBox("Backup Date","Missing Backup release date","good",releaseInfoUrl));
+						}else{
+							ul.append(letterboxd.helpers.createReportBox("Backup Date","Missing Backup release date","bad",releaseInfoUrl));
+						}
+					}
+
+					// Budget
+					if (this.wiki.Budget != null){
+						ul.append(letterboxd.helpers.createReportBox("Budget","No Issues","good"));
+					}else{
+						ul.append(letterboxd.helpers.createReportBox("Budget","Missing budget","bad"));
+					}
+
+					// Box Office US
+					if (this.wiki.Box_OfficeUS != null){
+						ul.append(letterboxd.helpers.createReportBox("Box Office US","No Issues","good"));
+					}else{
+						ul.append(letterboxd.helpers.createReportBox("Box Office US","Missing box office USA","bad"));
+					}
+
+					// Box Office WW
+					if (this.wiki.Box_OfficeWW != null){
+						ul.append(letterboxd.helpers.createReportBox("Box Office WW","No Issues","good"));
+					}else{
+						ul.append(letterboxd.helpers.createReportBox("Box Office WW","Missing box office Worldwide","bad"));
 					}
 				}else{
-					ul.append(letterboxd.helpers.createReportBox("Origin Date","Missing Country of Origin release date","bad",releaseInfoUrl));
-				}
-
-				// USA Date
-				var hasUSDate = false;
-				if (this.wiki.Publication_Date != null){
-					hasUSDate = true;
-					if (this.wiki.Publication_Date.value.includes("-01-01T")){
-						ul.append(letterboxd.helpers.createReportBox("USA Date","US release date missing full date (year only)","warn",releaseInfoUrl));
-					}else{
-						ul.append(letterboxd.helpers.createReportBox("USA Date","No Issues","good",releaseInfoUrl));
-					}
-				}else{
-					if (hasOriginDate){
-						ul.append(letterboxd.helpers.createReportBox("USA Date","Missing US release date","warn",releaseInfoUrl));
-					}else{
-						ul.append(letterboxd.helpers.createReportBox("USA Date","Missing US release date","bad",releaseInfoUrl));
-					}
-				}
-
-				// Backup Date
-				if (this.wiki.Publication_Date_Backup != null){
-					if (this.wiki.Publication_Date_Backup.value.includes("-01-01T")){
-						ul.append(letterboxd.helpers.createReportBox("Backup Date","Backup release date missing full date (year only)","warn",releaseInfoUrl));
-					}else{
-						ul.append(letterboxd.helpers.createReportBox("Backup Date","No Issues","good",releaseInfoUrl));
-					}
-				}else{
-					if (hasUSDate || hasOriginDate){
-						ul.append(letterboxd.helpers.createReportBox("Backup Date","Missing Backup release date","good",releaseInfoUrl));
-					}else{
-						ul.append(letterboxd.helpers.createReportBox("Backup Date","Missing Backup release date","bad",releaseInfoUrl));
-					}
-				}
-
-				// Budget
-				if (this.wiki.Budget != null){
-					ul.append(letterboxd.helpers.createReportBox("Budget","No Issues","good"));
-				}else{
-					ul.append(letterboxd.helpers.createReportBox("Budget","Missing budget","bad"));
-				}
-
-				// Box Office US
-				if (this.wiki.Box_OfficeUS != null){
-					ul.append(letterboxd.helpers.createReportBox("Box Office US","No Issues","good"));
-				}else{
-					ul.append(letterboxd.helpers.createReportBox("Box Office US","Missing box office USA","bad"));
-				}
-
-				// Box Office WW
-				if (this.wiki.Box_OfficeWW != null){
-					ul.append(letterboxd.helpers.createReportBox("Box Office WW","No Issues","good"));
-				}else{
-					ul.append(letterboxd.helpers.createReportBox("Box Office WW","Missing box office Worldwide","bad"));
+					ul.append(letterboxd.helpers.createReportBox("WikiDate","Connot find WikiData page","bad"));
 				}
 
 

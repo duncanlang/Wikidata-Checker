@@ -97,7 +97,7 @@
 			wikiData: {state: 0, tomatoURL: null, metaURL: "", budget: null, boxOffice: null, boxOfficeWW: null, mpaa: null, date: null, date_origin: null, rating: null, US_Title: null, Alt_Title: null},
 
 			// OMDb
-			omdbData: {state: 0, data: null, metascore: null},
+			omdbData: {state: 0, data: null, metascore: null, tomatoURL},
 
 			stopRunning() {
 				this.running = false;
@@ -161,6 +161,9 @@
 							
 						if (this.omdbData.data.Rated != null && this.omdbData.data.Rated != "N/A")
 							this.omdbData.rated = this.omdbData.data.Rated;
+
+						if (this.omdbData.data.tomatoURL != null && this.omdbData.data.tomatoURL != "N/A")
+							this.omdbData.tomatoURL = this.omdbData.data.tomatoURL;
 
 
 						this.wikiData.state = 2;
@@ -239,21 +242,28 @@
 				});
 				section.append(ul);
 
+
+				var title = document.querySelector(".headline-1.js-widont.prettify").innerText;
+
 				if (this.wiki != null){
 					// Tomato
+					var tomatoSearchURL = "https://www.rottentomatoes.com/search?search=" + title;
 					if (this.wiki.Rotten_Tomatoes_ID != null){
-						ul.append(letterboxd.helpers.createReportBox("Tomato","No Issues","good"));
+						ul.append(letterboxd.helpers.createReportBox("Tomato","No Issues","good",tomatoSearchURL));
+					}else if(this.omdbData.tomatoURL != null){
+						ul.append(letterboxd.helpers.createReportBox("Tomato","Missing Rotten Tomatoes ID, but found in OMDb","bad",tomatoSearchURL));
 					}else{
-						ul.append(letterboxd.helpers.createReportBox("Tomato","Missing Rotten Tomatoes ID","bad"));
+						ul.append(letterboxd.helpers.createReportBox("Tomato","Missing Rotten Tomatoes ID","bad",tomatoSearchURL));
 					}
 
 					// Meta
+					var metaSearchURL = "https://www.metacritic.com/search/movie/" + title + "/results";
 					if (this.wiki.Metacritic_ID != null){
-						ul.append(letterboxd.helpers.createReportBox("Meta","No Issues","good","https://www.metacritic.com/"));
+						ul.append(letterboxd.helpers.createReportBox("Meta","No Issues","good",metaSearchURL));
 					}else if(this.omdbData.metascore != null){
-						ul.append(letterboxd.helpers.createReportBox("Meta","Missing Metacritic ID, but found in OMDb","bad","https://www.metacritic.com/"));
+						ul.append(letterboxd.helpers.createReportBox("Meta","Missing Metacritic ID, but found in OMDb","bad",metaSearchURL));
 					}else{
-						ul.append(letterboxd.helpers.createReportBox("Meta","Possibly missing Metacritic ID","warn","https://www.metacritic.com/"));
+						ul.append(letterboxd.helpers.createReportBox("Meta","Possibly missing Metacritic ID","warn",metaSearchURL));
 					}
 
 					// MPAA

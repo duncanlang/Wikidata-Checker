@@ -97,7 +97,7 @@
 			wikiData: {state: 0, tomatoURL: null, metaURL: "", budget: null, boxOffice: null, boxOfficeWW: null, mpaa: null, date: null, date_origin: null, rating: null, US_Title: null, Alt_Title: null},
 
 			// OMDb
-			omdbData: {state: 0, data: null, metascore: null, tomatoURL},
+			omdbData: {state: 0, data: null, metascore: null, tomatoURL: null},
 
 			stopRunning() {
 				this.running = false;

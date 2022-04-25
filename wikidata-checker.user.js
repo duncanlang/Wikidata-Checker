@@ -194,7 +194,6 @@
 						if (imdbLink.includes("maindetails"))
 							imdbLink = imdbLink.replace("maindetails","ratings");
 
-						//this.imdbInfo[0] = imdbLink;
 						this.imdbData.url = imdbLink;
 					}
 				}
@@ -207,8 +206,6 @@
 
 			addWikiDataReport(){	
 				if (document.querySelector('.wikidata-report')) return;
-
-				var releaseInfoUrl = 'https://www.imdb.com/title/' + this.imdbID + '/releaseinfo';
 				
 				// Create Section
 				//*********************************************
@@ -244,6 +241,7 @@
 
 
 				var title = document.querySelector(".headline-1.js-widont.prettify").innerText;
+				title = title.replace(/\s+/g, '+');
 
 				if (this.wiki != null){
 					// Tomato
@@ -267,8 +265,9 @@
 					}
 
 					// MPAA
+					var mpaaSearchURL = "https://www.filmratings.com/Search?filmTitle=" + title
 					if (this.wiki.MPAA_film_rating != null){
-						ul.append(letterboxd.helpers.createReportBox("MPAA","No Issues","good","https://www.filmratings.com/Search"));
+						ul.append(letterboxd.helpers.createReportBox("MPAA","No Issues","good",mpaaSearchURL));
 					}else{
 						var ratings = ["G","PG","PG-13","R","NC-17"]
 						var bad = false
@@ -276,13 +275,14 @@
 							bad = true;
 
 						if (bad){
-							ul.append(letterboxd.helpers.createReportBox("MPAA","Missing MPAA rating, but found in OMDb","bad","https://www.filmratings.com/Search"));
+							ul.append(letterboxd.helpers.createReportBox("MPAA","Missing MPAA rating, but found in OMDb","bad",mpaaSearchURL));
 						}else{
-							ul.append(letterboxd.helpers.createReportBox("MPAA","Missing MPAA rating","warn","https://www.filmratings.com/Search"));
+							ul.append(letterboxd.helpers.createReportBox("MPAA","Missing MPAA rating","warn",mpaaSearchURL));
 						}
 					}
 
 					// Country of Origin Date
+					var releaseInfoUrl = 'https://www.imdb.com/title/' + this.imdbID + '/releaseinfo';
 					var hasOriginDate = false;
 					if (this.wiki.Publication_Date_Origin != null){
 						hasOriginDate = true;
@@ -332,24 +332,25 @@
 					}
 
 					// Budget
+					var mojoURL = "https://www.boxofficemojo.com/title/" + this.imdbID;
 					if (this.wiki.Budget != null){
-						ul.append(letterboxd.helpers.createReportBox("Budget","No Issues","good"));
+						ul.append(letterboxd.helpers.createReportBox("Budget","No Issues","good",mojoURL));
 					}else{
-						ul.append(letterboxd.helpers.createReportBox("Budget","Missing budget","bad"));
+						ul.append(letterboxd.helpers.createReportBox("Budget","Missing budget","bad",mojoURL));
 					}
 
 					// Box Office US
 					if (this.wiki.Box_OfficeUS != null){
-						ul.append(letterboxd.helpers.createReportBox("Box Office US","No Issues","good"));
+						ul.append(letterboxd.helpers.createReportBox("Box Office US","No Issues","good",mojoURL));
 					}else{
-						ul.append(letterboxd.helpers.createReportBox("Box Office US","Missing box office USA","bad"));
+						ul.append(letterboxd.helpers.createReportBox("Box Office US","Missing box office USA","bad",mojoURL));
 					}
 
 					// Box Office WW
 					if (this.wiki.Box_OfficeWW != null){
-						ul.append(letterboxd.helpers.createReportBox("Box Office WW","No Issues","good"));
+						ul.append(letterboxd.helpers.createReportBox("Box Office WW","No Issues","good",mojoURL));
 					}else{
-						ul.append(letterboxd.helpers.createReportBox("Box Office WW","Missing box office Worldwide","bad"));
+						ul.append(letterboxd.helpers.createReportBox("Box Office WW","Missing box office Worldwide","bad",mojoURL));
 					}
 				}else{
 					ul.append(letterboxd.helpers.createReportBox("WikiData","Connot find WikiData page","bad"));
@@ -428,7 +429,8 @@
 
 				var ajaxOptions = {
 					url: link,
-					type : 'GET'
+					type : 'GET',
+					timeout: 1000
 				}
 
 				return $.when($.ajax(ajaxOptions))

@@ -155,15 +155,21 @@
 						// Now get the OMDb before
 						var omdbString = "https://www.omdbapi.com/?apikey=afd82b43&i=" + this.imdbID + "&plot=short&r=json&tomatoes=true";
 						console.log(omdbString);
-						this.omdbData.data = await letterboxd.helpers.getOMDbData(omdbString);
-						if (this.omdbData.data.Metascore != null && this.omdbData.data.Metascore != "N/A")
-							this.omdbData.metascore = this.omdbData.data.Metascore;
-							
-						if (this.omdbData.data.Rated != null && this.omdbData.data.Rated != "N/A")
-							this.omdbData.rated = this.omdbData.data.Rated;
-
-						if (this.omdbData.data.tomatoURL != null && this.omdbData.data.tomatoURL != "N/A")
-							this.omdbData.tomatoURL = this.omdbData.data.tomatoURL;
+						try{
+							this.omdbData.data = await letterboxd.helpers.getOMDbData(omdbString);
+						}catch{
+							this.omdbData.data = null
+						}
+						if (this.omdbData.data != null){
+							if (this.omdbData.data.Metascore != null && this.omdbData.data.Metascore != "N/A")
+								this.omdbData.metascore = this.omdbData.data.Metascore;
+								
+							if (this.omdbData.data.Rated != null && this.omdbData.data.Rated != "N/A")
+								this.omdbData.rated = this.omdbData.data.Rated;
+	
+							if (this.omdbData.data.tomatoURL != null && this.omdbData.data.tomatoURL != "N/A")
+								this.omdbData.tomatoURL = this.omdbData.data.tomatoURL;
+						}
 
 
 						this.wikiData.state = 2;

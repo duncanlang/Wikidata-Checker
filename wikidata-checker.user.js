@@ -112,16 +112,21 @@
 					this.letterboxdYear = document.querySelectorAll(".number a")[0].innerText;
 				}
 
-				// First Get the IMDb link activity-from-friend
-				if (this.imdbID == "")
+				// First Get the IMDb link
+				if (this.imdbID == "" && document.querySelector('.micro-button') != null){
+					// Gets the IMDb link and ID, and also TMDB id
 					this.getIMDbLink();
+				}
 
 				var canAdd = (document.querySelector('.sidebar'))
 
-				if (this.imdbID != "" && this.wikiData.state < 1 && canAdd){
+				if ((this.imdbID != "" || this.tmdbID != '') && this.wikiData.state < 1 && canAdd){
 					// Call WikiData
 					this.wikiData.state = 1;
-					var queryString = 'https://query.wikidata.org/bigdata/namespace/wdq/sparql?format=json&query=' + letterboxd.helpers.getWikiDataQuery(this.imdbID);
+					if (this.imdbID != '') // IMDb should be most reliable
+						var queryString = 'https://query.wikidata.org/bigdata/namespace/wdq/sparql?format=json&query=' + letterboxd.helpers.getWikiDataQuery(this.imdbID, 'IMDB');
+					else if (this.tmdbID != '') // Every page should have a TMDB ID
+						var queryString = 'https://query.wikidata.org/bigdata/namespace/wdq/sparql?format=json&query=' + letterboxd.helpers.getWikiDataQuery(this.tmdbID, 'TMDB');
 
 					this.wiki = await letterboxd.helpers.getWikiData(queryString)
 
@@ -184,11 +189,12 @@
 				return this.stopRunning();
 			},
 
-			async getIMDbLink(){
+			getIMDbLink(){
 				// Get the two links (imdb and tmdb)
 				const links = document.querySelectorAll('.micro-button.track-event');
 
 				var imdbLink = "";
+				var tmdbLink = "";
 
 				// Loop and find IMDB
 				for(var i = 0; i < links.length; i++){
@@ -201,13 +207,18 @@
 							imdbLink = imdbLink.replace("maindetails","ratings");
 
 						this.imdbData.url = imdbLink;
+
+					}else if (links[i].innerHTML === "TMDb"){
+						// Grab the tmdb link
+						tmdbLink = links[i].href;
 					}
 				}
 
 				// Separate out the ID
-				this.imdbID = imdbLink.replace("https://www.imdb.com/title/","");
-				this.imdbID = this.imdbID.replace("/ratings","");
-				this.imdbID = this.imdbID.replace("/","");
+				this.imdbID = imdbLink.match(/(imdb.com\/title\/)(tt[0-9]+)(\/)/)[2];
+
+				// Separate the TMDB ID
+				this.tmdbID = tmdbLink.match(/(themoviedb.org\/movie\/)([0-9]+)($|\/)/)[2];
 			},
 
 			addWikiDataReport(){	
@@ -272,7 +283,7 @@
 
 					// MPAA
 					var mpaaSearchURL = "https://www.filmratings.com/Search?filmTitle=" + title
-					if (this.wiki.MPAA_film_rating != null){
+					if (this.wiki.MPAA_film_ratingLabel != null){
 						ul.append(letterboxd.helpers.createReportBox("MPAA","No Issues","good",mpaaSearchURL));
 					}else{
 						var ratings = ["G","PG","PG-13","R","NC-17"]
@@ -415,7 +426,7 @@
 			},
 
 			async getWikiData(link) {	
-				//console.log("calling " + link);
+				console.log("calling " + link);
 
 				var ajaxOptions = {
 					url: link,
@@ -561,62 +572,92 @@
 				return value;
 			},
 
-			getWikiDataQuery(imdbID){
-				var output = `
-				SELECT DISTINCT ?item ?itemLabel ?Rotten_Tomatoes_ID ?Metacritic_ID ?MPAA_film_rating ?MPAA_film_ratingLabel ?Budget ?Box_OfficeUS ?Box_OfficeWW ?Publication_Date ?Publication_Date_Backup ?Publication_Date_Origin ?US_Title WHERE {
-					SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE]". }
-					{
-					  SELECT DISTINCT ?item WHERE { 
-						?item p:P345 ?statement0.
-						?statement0 ps:P345 '` + imdbID + `'.
-					  }
-					  LIMIT 10 
-					} 
-					VALUES ?ranks { wikibase:PreferredRank wikibase:NormalRank }
-					OPTIONAL { ?item wdt:P1258 ?Rotten_Tomatoes_ID. } 
-					OPTIONAL { ?item wdt:P1712 ?Metacritic_ID. } 
-					OPTIONAL { ?item wdt:P1657 ?MPAA_film_rating. }
-					OPTIONAL { ?item wdt:P2130 ?Budget. } 
-					OPTIONAL { 
-					  ?item p:P2142 ?Box_Office_Entry.
-					  ?Box_Office_Entry ps:P2142 ?Box_OfficeUS.
-					  ?Box_Office_Entry pq:P3005 wd:Q30
-					}
-					OPTIONAL { 
-					  ?item p:P2142 ?Box_Office_EntryWW.
-					  ?Box_Office_EntryWW ps:P2142 ?Box_OfficeWW.
-					  ?Box_Office_EntryWW pq:P3005 wd:Q13780930
-					}
-					OPTIONAL { 
-					  ?item p:P577 ?Publication_Date_entry.
-					  ?Publication_Date_entry ps:P577 ?Publication_Date.
-					  ?Publication_Date_entry pq:P291 wd:Q30.  
-					  MINUS { ?Publication_Date_entry wikibase:rank wikibase:DeprecatedRank }
-					}
-					OPTIONAL {
-					  ?item p:P577 ?Publication_Date_Backup_entry.
-					  ?Publication_Date_Backup_entry ps:P577 ?Publication_Date_Backup.
-					  FILTER NOT EXISTS { ?Publication_Date_Backup_entry pq:P291 [] }
-					  MINUS { ?Publication_Date_Backup_entry wikibase:rank wikibase:DeprecatedRank }
-					}
-					OPTIONAL { 
-					  ?item wdt:P495 ?Country_Of_Origin. 
-					  OPTIONAL {
-						?item p:P577 ?Date_Origin_entry.
-						?Date_Origin_entry ps:P577 ?Publication_Date_Origin.
-						?Date_Origin_entry pq:P291 ?Country_Of_Origin.    
-						MINUS { ?Date_Origin_entry wikibase:rank wikibase:DeprecatedRank }
-					  }
-					} 
-					OPTIONAL { 
-					  ?item p:P1476 ?Title_Entry.
-					  ?Title_Entry ps:P1476 ?US_Title.
-					  ?Title_Entry pq:P3005 wd:Q30
-					}
-				  }
-				`
 
-				return output;
+			getWikiDataQuery(id, idType){
+				switch(idType.toUpperCase()){
+					case "IMDB":
+						idType = "P345";
+						break;
+					case "TMDB":
+						idType = "P4947";
+						break;
+					case "LETTERBOXD":
+						idType = "P6127";
+						break;
+				}
+				var sparqlQuery = "SELECT DISTINCT ?item ?itemLabel ?Rotten_Tomatoes_ID ?Metacritic_ID ?MPAA_film_ratingLabel ?Budget ?Budget_UnitLabel ?Box_OfficeUS ?Box_Office_UnitLabel ?Box_OfficeWW ?Box_OfficeWW_UnitLabel ?Publication_Date ?Publication_Date_Backup ?Publication_Date_Origin ?US_Title WHERE {\n" +
+				"  SERVICE wikibase:label { bd:serviceParam wikibase:language \"[AUTO_LANGUAGE],en\". }\n" +
+				"  {\n" +
+				"    SELECT DISTINCT ?item WHERE {\n" +
+				"      ?item p:" + idType + " ?statement0.\n" +
+				"      ?statement0 ps:" + idType + " \"" + id + "\".\n" +
+				"    }\n" +
+				"    LIMIT 10\n" +
+				"  }\n" +
+				"  OPTIONAL { ?item wdt:P1258 ?Rotten_Tomatoes_ID. }\n" +
+				"  OPTIONAL { ?item wdt:P1712 ?Metacritic_ID. }\n" +
+				"  OPTIONAL { ?item wdt:P1657 ?MPAA_film_rating. }\n" +
+				"  OPTIONAL {\n" +
+				"    ?item p:P2130 ?Budget_Entry.\n" +
+				"    ?Budget_Entry ps:P2130 ?Budget.\n" +
+				"    OPTIONAL {\n" +
+				"      ?Budget_Entry psv:P2130 ?valuenode.\n" +
+				"      ?valuenode wikibase:quantityUnit ?Budget_Unit.\n" +
+				"      ?Budget_Unit p:P498 [ps:P498 ?Budget_UnitLabel].\n" +
+				"    }\n" +
+				"    MINUS { ?Budget_Entry wikibase:rank wikibase:DeprecatedRank. }\n" +
+				"  }\n" +
+				"  OPTIONAL {\n" +
+				"    ?item p:P2142 ?Box_Office_Entry.\n" +
+				"    ?Box_Office_Entry ps:P2142 ?Box_OfficeUS;\n" +
+				"      pq:P3005 wd:Q30.\n" +
+				"    OPTIONAL {\n" +
+				"      ?Box_Office_Entry psv:P2142 ?valuenode2.\n" +
+				"      ?valuenode2 wikibase:quantityUnit ?Box_Office_Unit.\n" +
+				"      ?Box_Office_Unit p:P498 [ps:P498 ?Box_Office_UnitLabel].\n" +
+				"    }\n" +
+				"    MINUS { ?Box_Office_Entry wikibase:rank wikibase:DeprecatedRank. }\n" +
+				"  }\n" +
+				"  OPTIONAL {\n" +
+				"    ?item p:P2142 ?Box_Office_EntryWW.\n" +
+				"    ?Box_Office_EntryWW ps:P2142 ?Box_OfficeWW;\n" +
+				"      pq:P3005 wd:Q13780930.\n" +
+				"    OPTIONAL {\n" +
+				"      ?Box_Office_EntryWW psv:P2142 ?valuenode3.\n" +
+				"      ?valuenode3 wikibase:quantityUnit ?Box_OfficeWW_Unit.\n" +
+				"      ?Box_OfficeWW_Unit p:P498 [ps:P498 ?Box_OfficeWW_UnitLabel].\n" +
+				"    }\n" +
+				"    MINUS { ?Box_Office_EntryWW wikibase:rank wikibase:DeprecatedRank. }\n" +
+				"  }\n" +
+				"  OPTIONAL {\n" +
+				"    ?item p:P577 ?Publication_Date_entry.\n" +
+				"    ?Publication_Date_entry ps:P577 ?Publication_Date;\n" +
+				"      pq:P291 wd:Q30.\n" +
+				"    MINUS { ?Publication_Date_entry wikibase:rank wikibase:DeprecatedRank. }\n" +
+				"  }\n" +
+				"  OPTIONAL {\n" +
+				"    ?item p:P577 ?Publication_Date_Backup_entry.\n" +
+				"    ?Publication_Date_Backup_entry ps:P577 ?Publication_Date_Backup.\n" +
+				"    FILTER NOT EXISTS { ?Publication_Date_Backup_entry pq:P291 [] }\n" +
+				"    MINUS { ?Publication_Date_Backup_entry wikibase:rank wikibase:DeprecatedRank. }\n" +
+				"  }\n" +
+				"  OPTIONAL {\n" +
+				"    ?item wdt:P495 ?Country_Of_Origin.\n" +
+				"    OPTIONAL {\n" +
+				"      ?item p:P577 ?Date_Origin_entry.\n" +
+				"      ?Date_Origin_entry ps:P577 ?Publication_Date_Origin;\n" +
+				"        pq:P291 ?Country_Of_Origin.\n" +
+				"      MINUS { ?Date_Origin_entry wikibase:rank wikibase:DeprecatedRank. }\n" +
+				"    }\n" +
+				"  }\n" +
+				"  OPTIONAL {\n" +
+				"    ?item p:P1476 ?Title_Entry.\n" +
+				"    ?Title_Entry ps:P1476 ?US_Title;\n" +
+				"      pq:P3005 wd:Q30.\n" +
+				"  }\n" +
+				"}";
+
+				return sparqlQuery;
 			}
 		}
 	};

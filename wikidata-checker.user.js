@@ -159,7 +159,7 @@
 
 						// Now get the OMDb before
 						var omdbString = "https://www.omdbapi.com/?apikey=afd82b43&i=" + this.imdbID + "&plot=short&r=json&tomatoes=true";
-						console.log(omdbString);
+						console.log("WikiData-Checker | Calling: " + omdbString);
 						try{
 							this.omdbData.data = await letterboxd.helpers.getOMDbData(omdbString);
 						}catch{
@@ -386,36 +386,6 @@
 		},
 
 		helpers: {
-			async getIMDBData(link) {
-				//console.log("calling " + link);
-					
-				try {
-					const res = await letterboxd.helpers.request({
-						url: link,
-						method: 'GET'
-					});
-					return res.response;
-				} catch (err) {
-					console.error(err);
-				}
-				return null;
-			},
-
-			async getData(link) {
-				//console.log("calling " + link);
-
-				try {
-					const res = await letterboxd.helpers.request({
-						url: link,
-						method: 'GET'
-					});
-					return {response: res.response, url: res.responseURL};
-				} catch (err) {
-					console.error(err);
-				}
-				return null;
-			},
-
 			request(options) {
 				return new Promise((resolve, reject) => {
 					options.onload = res => resolve(res);
@@ -426,7 +396,7 @@
 			},
 
 			async getWikiData(link) {	
-				console.log("calling " + link);
+				console.log("Wikidata-Checker | Calling: " + link);
 
 				var ajaxOptions = {
 					url: link,
@@ -441,9 +411,7 @@
 				return output;
 			},
 
-			async getOMDbData(link) {  
-				//console.log("calling " + link);
-
+			async getOMDbData(link) {
 				var ajaxOptions = {
 					url: link,
 					type : 'GET',

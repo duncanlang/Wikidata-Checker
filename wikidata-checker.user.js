@@ -218,7 +218,9 @@
 				this.imdbID = imdbLink.match(/(imdb.com\/title\/)(tt[0-9]+)(\/)/)[2];
 
 				// Separate the TMDB ID
-				this.tmdbID = tmdbLink.match(/(themoviedb.org\/movie\/)([0-9]+)($|\/)/)[2];
+				if (tmdbLink != ""){
+					this.tmdbID = tmdbLink.match(/(themoviedb.org\/(?:tv|movie)\/)([0-9]+)($|\/)/)[2];
+				}
 			},
 
 			addWikiDataReport(){	

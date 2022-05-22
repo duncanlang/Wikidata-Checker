@@ -94,7 +94,7 @@
 
 			// WikiData
 			wiki: null,
-			wikiData: {state: 0, tomatoURL: null, metaURL: "", budget: null, boxOffice: null, boxOfficeWW: null, mpaa: null, date: null, date_origin: null, rating: null, US_Title: null, Alt_Title: null},
+			wikiData: {state: 0, tomatoURL: null, metaURL: "", budget: {value: null, currency: null}, boxOfficeUS: {value: null, currency: null}, boxOfficeWW: {value: null, currency: null}, mpaa: null, date: null, date_origin: null, rating: null, US_Title: null, Alt_Title: null, TV_Start: null, TV_End: null},
 
 			// OMDb
 			omdbData: {state: 0, data: null, metascore: null, tomatoURL: null},
@@ -138,6 +138,12 @@
 								var result = this.wiki.results.bindings[i];
 								var entry = {id: i, score: 0};
 
+								if (result.TV_Start != null && !result.TV_Start.value.includes("-01-01T")){
+									entry.score++;
+								}
+								if (result.TV_End != null && !result.TV_End.value.includes("-01-01T")){
+									entry.score++;
+								}
 								if (result.Publication_Date != null && !result.Publication_Date.value.includes("-01-01T")){
 									entry.score++;
 								}
@@ -230,6 +236,8 @@
 				//*********************************************
 				const section = letterboxd.helpers.createElement('section', {
 					class: 'film-recent-reviews wikidata-report'
+				},{
+					position: 'relative'
 				});				
 
 				// Add the Header
@@ -250,6 +258,16 @@
 				headerText.innerText = "WikiData Report";
 				headerLink.append(headerText);
 
+				// Add the Wikipedia Link
+				if (this.wiki.Wikipedia != null){
+					const showDetails = letterboxd.helpers.createElement('a', {
+						class: 'all-link',
+						href: this.wiki.Wikipedia.value
+					});
+					showDetails.innerText = "Wikipedia";
+					section.append(showDetails);
+				}
+
 				// Create the Report
 				//*********************************************
 				// ul
@@ -264,6 +282,7 @@
 
 				if (this.wiki != null){
 					// Tomato
+					//***********************************************
 					var tomatoSearchURL = "https://www.rottentomatoes.com/search?search=" + title;
 					if (this.wiki.Rotten_Tomatoes_ID != null){
 						ul.append(letterboxd.helpers.createReportBox("Tomato","No Issues","good",tomatoSearchURL));
@@ -274,6 +293,7 @@
 					}
 
 					// Meta
+					//***********************************************
 					var metaSearchURL = "https://www.metacritic.com/search/movie/" + title + "/results";
 					if (this.wiki.Metacritic_ID != null){
 						ul.append(letterboxd.helpers.createReportBox("Meta","No Issues","good",metaSearchURL));
@@ -284,6 +304,7 @@
 					}
 
 					// MPAA
+					//***********************************************
 					var mpaaSearchURL = "https://www.filmratings.com/Search?filmTitle=" + title
 					if (this.wiki.MPAA_film_ratingLabel != null){
 						ul.append(letterboxd.helpers.createReportBox("MPAA","No Issues","good",mpaaSearchURL));
@@ -300,76 +321,107 @@
 						}
 					}
 
-					// Country of Origin Date
+					// DATES
+					//***********************************************
 					var releaseInfoUrl = 'https://www.imdb.com/title/' + this.imdbID + '/releaseinfo';
-					var hasOriginDate = false;
-					if (this.wiki.Publication_Date_Origin != null){
-						hasOriginDate = true;
-						if (this.wiki.Publication_Date_Origin.value.includes("-01-01T")){
-							ul.append(letterboxd.helpers.createReportBox("Origin Date","Country of Origin release date missing full date (year only)","warn",releaseInfoUrl));
+					// TV Dates
+					if (this.wiki.TV_Start != null){
+						// Start Date
+						if (this.wiki.TV_Start != null){
+							ul.append(letterboxd.helpers.createReportBox("Start Date","No Issues","good",releaseInfoUrl));
 						}else{
-							ul.append(letterboxd.helpers.createReportBox("Origin Date","No Issues","good",releaseInfoUrl));
+							ul.append(letterboxd.helpers.createReportBox("Start Date","Missing TV start date","bad",releaseInfoUrl));
 						}
-					}else{
-						ul.append(letterboxd.helpers.createReportBox("Origin Date","Missing Country of Origin release date","bad",releaseInfoUrl));
-					}
 
-					// USA Date
-					var hasUSDate = false;
-					if (this.wiki.Publication_Date != null){
-						hasUSDate = true;
-						if (this.wiki.Publication_Date.value.includes("-01-01T")){
-							ul.append(letterboxd.helpers.createReportBox("USA Date","US release date missing full date (year only)","warn",releaseInfoUrl));
+						// End Date
+						if (this.wiki.TV_End != null){
+							ul.append(letterboxd.helpers.createReportBox("End Date","No Issues","good",releaseInfoUrl));
 						}else{
-							ul.append(letterboxd.helpers.createReportBox("USA Date","No Issues","good",releaseInfoUrl));
+							ul.append(letterboxd.helpers.createReportBox("End Date","Missing TV end date","bad",releaseInfoUrl));
 						}
-					}else{
-						if (hasOriginDate){
-							ul.append(letterboxd.helpers.createReportBox("USA Date","Missing US release date","warn",releaseInfoUrl));
-						}else{
-							ul.append(letterboxd.helpers.createReportBox("USA Date","Missing US release date","bad",releaseInfoUrl));
-						}
-					}
 
-					// Backup Date
-					if (this.wiki.Publication_Date_Backup != null){
-						if (this.wiki.Publication_Date_Backup.value.includes("-01-01T")){
-							var state  = "warn";
-							if (hasUSDate || hasOriginDate){
-								state  = "good";
+					}else{
+						// Country of Origin Date
+						var hasOriginDate = false;
+						if (this.wiki.Publication_Date_Origin != null){
+							hasOriginDate = true;
+							if (this.wiki.Publication_Date_Origin.value.includes("-01-01T")){
+								ul.append(letterboxd.helpers.createReportBox("Origin Date","Country of Origin release date missing full date (year only)","warn",releaseInfoUrl));
+							}else{
+								ul.append(letterboxd.helpers.createReportBox("Origin Date","No Issues","good",releaseInfoUrl));
 							}
-							ul.append(letterboxd.helpers.createReportBox("Backup Date","Backup release date missing full date (year only)",state,releaseInfoUrl));
 						}else{
-							ul.append(letterboxd.helpers.createReportBox("Backup Date","No Issues","good",releaseInfoUrl));
+							ul.append(letterboxd.helpers.createReportBox("Origin Date","Missing Country of Origin release date","bad",releaseInfoUrl));
 						}
-					}else{
-						if (hasUSDate || hasOriginDate){
-							ul.append(letterboxd.helpers.createReportBox("Backup Date","Missing Backup release date","good",releaseInfoUrl));
+
+						// USA Date
+						var hasUSDate = false;
+						if (this.wiki.Publication_Date != null){
+							hasUSDate = true;
+							if (this.wiki.Publication_Date.value.includes("-01-01T")){
+								ul.append(letterboxd.helpers.createReportBox("USA Date","US release date missing full date (year only)","warn",releaseInfoUrl));
+							}else{
+								ul.append(letterboxd.helpers.createReportBox("USA Date","No Issues","good",releaseInfoUrl));
+							}
 						}else{
-							ul.append(letterboxd.helpers.createReportBox("Backup Date","Missing Backup release date","bad",releaseInfoUrl));
+							if (hasOriginDate){
+								ul.append(letterboxd.helpers.createReportBox("USA Date","Missing US release date","warn",releaseInfoUrl));
+							}else{
+								ul.append(letterboxd.helpers.createReportBox("USA Date","Missing US release date","bad",releaseInfoUrl));
+							}
+						}
+
+						// Backup Date
+						if (this.wiki.Publication_Date_Backup != null){
+							if (this.wiki.Publication_Date_Backup.value.includes("-01-01T")){
+								var state  = "warn";
+								if (hasUSDate || hasOriginDate){
+									state  = "good";
+								}
+								ul.append(letterboxd.helpers.createReportBox("Backup Date","Backup release date missing full date (year only)",state,releaseInfoUrl));
+							}else{
+								ul.append(letterboxd.helpers.createReportBox("Backup Date","No Issues","good",releaseInfoUrl));
+							}
+						}else{
+							if (hasUSDate || hasOriginDate){
+								ul.append(letterboxd.helpers.createReportBox("Backup Date","Missing Backup release date","good",releaseInfoUrl));
+							}else{
+								ul.append(letterboxd.helpers.createReportBox("Backup Date","Missing Backup release date","bad",releaseInfoUrl));
+							}
+						}
+
+						// Budget
+						//***********************************************
+						var mojoURL = "https://www.boxofficemojo.com/title/" + this.imdbID;
+						if (this.wiki.Budget != null){
+							ul.append(letterboxd.helpers.createReportBox("Budget","No Issues","good",mojoURL));
+						}else{
+							ul.append(letterboxd.helpers.createReportBox("Budget","Missing budget","bad",mojoURL));
+						}
+	
+						// Box Office US
+						//***********************************************
+						if (this.wiki.Box_OfficeUS != null){
+							ul.append(letterboxd.helpers.createReportBox("Box Office US","No Issues","good",mojoURL));
+						}else{
+							ul.append(letterboxd.helpers.createReportBox("Box Office US","Missing US box office","bad",mojoURL));
+						}
+	
+						// Box Office WW
+						//***********************************************
+						if (this.wiki.Box_OfficeWW != null){
+							ul.append(letterboxd.helpers.createReportBox("Box Office WW","No Issues","good",mojoURL));
+						}else{
+							ul.append(letterboxd.helpers.createReportBox("Box Office WW","Missing worldwide box office","bad",mojoURL));
 						}
 					}
 
-					// Budget
-					var mojoURL = "https://www.boxofficemojo.com/title/" + this.imdbID;
-					if (this.wiki.Budget != null){
-						ul.append(letterboxd.helpers.createReportBox("Budget","No Issues","good",mojoURL));
+					// Letterboxd ID
+						//***********************************************
+					if (this.wiki.Letterboxd_ID != null){
+						ul.append(letterboxd.helpers.createReportBox("Letterboxd ID","No Issues","good",mojoURL));
 					}else{
-						ul.append(letterboxd.helpers.createReportBox("Budget","Missing budget","bad",mojoURL));
-					}
-
-					// Box Office US
-					if (this.wiki.Box_OfficeUS != null){
-						ul.append(letterboxd.helpers.createReportBox("Box Office US","No Issues","good",mojoURL));
-					}else{
-						ul.append(letterboxd.helpers.createReportBox("Box Office US","Missing box office USA","bad",mojoURL));
-					}
-
-					// Box Office WW
-					if (this.wiki.Box_OfficeWW != null){
-						ul.append(letterboxd.helpers.createReportBox("Box Office WW","No Issues","good",mojoURL));
-					}else{
-						ul.append(letterboxd.helpers.createReportBox("Box Office WW","Missing box office Worldwide","bad",mojoURL));
+						ul.append(letterboxd.helpers.createReportBox("Letterboxd ID","Missing Letterboxd ID","bad",mojoURL));
 					}
 				}else{
 					ul.append(letterboxd.helpers.createReportBox("WikiData","Connot find WikiData page","bad"));
@@ -541,8 +593,7 @@
 
 				return value;
 			},
-
-
+			
 			getWikiDataQuery(id, idType){
 				switch(idType.toUpperCase()){
 					case "IMDB":
@@ -555,7 +606,7 @@
 						idType = "P6127";
 						break;
 				}
-				var sparqlQuery = "SELECT DISTINCT ?item ?itemLabel ?Rotten_Tomatoes_ID ?Metacritic_ID ?MPAA_film_ratingLabel ?Budget ?Budget_UnitLabel ?Box_OfficeUS ?Box_OfficeUS_UnitLabel ?Box_OfficeWW ?Box_OfficeWW_UnitLabel ?Publication_Date ?Publication_Date_Backup ?Publication_Date_Origin ?US_Title WHERE {\n" +
+				var sparqlQuery = "SELECT DISTINCT ?item ?itemLabel ?Rotten_Tomatoes_ID ?Metacritic_ID ?Letterboxd_ID ?Wikipedia ?MPAA_film_ratingLabel ?Budget ?Budget_UnitLabel ?Box_OfficeUS ?Box_OfficeUS_UnitLabel ?Box_OfficeWW ?Box_OfficeWW_UnitLabel ?Publication_Date ?Publication_Date_Backup ?Publication_Date_Origin ?US_Title ?TV_Start ?TV_End WHERE {\n" +
 				"  SERVICE wikibase:label { bd:serviceParam wikibase:language \"[AUTO_LANGUAGE],en\". }\n" +
 				"  {\n" +
 				"    SELECT DISTINCT ?item WHERE {\n" +
@@ -566,7 +617,13 @@
 				"  }\n" +
 				"  OPTIONAL { ?item wdt:P1258 ?Rotten_Tomatoes_ID. }\n" +
 				"  OPTIONAL { ?item wdt:P1712 ?Metacritic_ID. }\n" +
-				"  OPTIONAL { ?item wdt:P1657 ?MPAA_film_rating. }\n" +
+				"  OPTIONAL { ?item wdt:P6127 ?Letterboxd_ID. }\n" +
+				"  OPTIONAL { ?item wdt:P1657 ?MPAA_film_rating. } \n" +
+				"  OPTIONAL {\n" +
+				"    ?Wikipedia schema:about ?item .\n" +
+				"    ?Wikipedia schema:inLanguage \"en\" .\n" +
+				"    ?Wikipedia schema:isPartOf <https://en.wikipedia.org/> .\n" +
+				"  }\n" +
 				"  OPTIONAL {\n" +
 				"    ?item p:P2130 ?Budget_Entry.\n" +
 				"    ?Budget_Entry ps:P2130 ?Budget.\n" +
@@ -636,8 +693,10 @@
 				"    ?Title_Entry ps:P1476 ?US_Title;\n" +
 				"      pq:P3005 wd:Q30.\n" +
 				"  }\n" +
+				"  OPTIONAL { ?item wdt:P580 ?TV_Start. }\n" +
+				"  OPTIONAL { ?item wdt:P582 ?TV_End. }\n" +
 				"}";
-
+				
 				return sparqlQuery;
 			}
 		}

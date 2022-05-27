@@ -259,7 +259,7 @@
 				headerLink.append(headerText);
 
 				// Add the Wikipedia Link
-				if (this.wiki.Wikipedia != null){
+				if (this.wiki != null && this.wiki.Wikipedia != null){
 					const showDetails = letterboxd.helpers.createElement('a', {
 						class: 'all-link',
 						href: this.wiki.Wikipedia.value

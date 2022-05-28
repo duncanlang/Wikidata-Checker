@@ -96,6 +96,8 @@
 			wiki: null,
 			wikiData: {state: 0, tomatoURL: null, metaURL: "", budget: {value: null, currency: null}, boxOfficeUS: {value: null, currency: null}, boxOfficeWW: {value: null, currency: null}, mpaa: null, date: null, date_origin: null, rating: null, US_Title: null, Alt_Title: null, TV_Start: null, TV_End: null},
 
+			isAnime: false,
+
 			// OMDb
 			omdbData: {state: 0, data: null, metascore: null, tomatoURL: null},
 
@@ -154,6 +156,12 @@
 									entry.score++;
 								}
 								results.push(entry);
+
+								if (result.Instance != null){
+									if (result.Instance.includes("anime") || result.Instance == ("original video animation")){
+										this.isAnime = true;
+									}
+								}
 							}
 							results.sort((a, b) => {
 								return b.score - a.score;
@@ -257,17 +265,7 @@
 				});
 				headerText.innerText = "WikiData Report";
 				headerLink.append(headerText);
-
-				// Add the Wikipedia Link
-				if (this.wiki != null && this.wiki.Wikipedia != null){
-					const showDetails = letterboxd.helpers.createElement('a', {
-						class: 'all-link',
-						href: this.wiki.Wikipedia.value
-					});
-					showDetails.innerText = "Wikipedia";
-					section.append(showDetails);
-				}
-
+				
 				// Create the Report
 				//*********************************************
 				// ul
@@ -275,12 +273,35 @@
 					class: 'avatar-list'
 				});
 				section.append(ul);
+				
+				// ul2
+				const ul2 = letterboxd.helpers.createElement('ul', {
+					class: 'avatar-list'
+				});
+				section.append(ul2);
+
+				// ul3
+				const ul3 = letterboxd.helpers.createElement('ul', {
+					class: 'avatar-list'
+				});
+				section.append(ul3);
 
 
 				var title = document.querySelector(".headline-1.js-widont.prettify").innerText;
 				title = title.replace(/\s+/g, '+');
 
 				if (this.wiki != null){
+					// Add the Wikipedia Link
+					//***********************************************
+					if (this.wiki.Wikipedia != null){
+						const showDetails = letterboxd.helpers.createElement('a', {
+							class: 'all-link',
+							href: this.wiki.Wikipedia.value
+						});
+						showDetails.innerText = "Wikipedia";
+						section.append(showDetails);
+					}
+
 					// Tomato
 					//***********************************************
 					var tomatoSearchURL = "https://www.rottentomatoes.com/search?search=" + title;
@@ -394,37 +415,65 @@
 						//***********************************************
 						var mojoURL = "https://www.boxofficemojo.com/title/" + this.imdbID;
 						if (this.wiki.Budget != null){
-							ul.append(letterboxd.helpers.createReportBox("Budget","No Issues","good",mojoURL));
+							ul2.append(letterboxd.helpers.createReportBox("Budget","No Issues","good",mojoURL));
 						}else{
-							ul.append(letterboxd.helpers.createReportBox("Budget","Missing budget","bad",mojoURL));
+							ul2.append(letterboxd.helpers.createReportBox("Budget","Missing budget","bad",mojoURL));
 						}
 	
 						// Box Office US
 						//***********************************************
 						if (this.wiki.Box_OfficeUS != null){
-							ul.append(letterboxd.helpers.createReportBox("Box Office US","No Issues","good",mojoURL));
+							ul2.append(letterboxd.helpers.createReportBox("Box Office US","No Issues","good",mojoURL));
 						}else{
-							ul.append(letterboxd.helpers.createReportBox("Box Office US","Missing US box office","bad",mojoURL));
+							ul2.append(letterboxd.helpers.createReportBox("Box Office US","Missing US box office","bad",mojoURL));
 						}
 	
 						// Box Office WW
 						//***********************************************
 						if (this.wiki.Box_OfficeWW != null){
-							ul.append(letterboxd.helpers.createReportBox("Box Office WW","No Issues","good",mojoURL));
+							ul2.append(letterboxd.helpers.createReportBox("Box Office WW","No Issues","good",mojoURL));
 						}else{
-							ul.append(letterboxd.helpers.createReportBox("Box Office WW","Missing worldwide box office","bad",mojoURL));
+							ul2.append(letterboxd.helpers.createReportBox("Box Office WW","Missing worldwide box office","bad",mojoURL));
 						}
 					}
 
 					// Letterboxd ID
-						//***********************************************
+					//***********************************************
 					if (this.wiki.Letterboxd_ID != null){
-						ul.append(letterboxd.helpers.createReportBox("Letterboxd ID","No Issues","good",mojoURL));
+						ul3.append(letterboxd.helpers.createReportBox("Letterboxd ID","No Issues","good"));
 					}else{
-						ul.append(letterboxd.helpers.createReportBox("Letterboxd ID","Missing Letterboxd ID","bad",mojoURL));
+						ul3.append(letterboxd.helpers.createReportBox("Letterboxd ID","Missing Letterboxd ID","bad"));
+					}
+
+					// ANIME IDS
+					//***********************************************
+					if (this.isAnime || (this.wiki.Anidb_ID != null || this.wiki.Anilist_ID != null || this.wiki.MAL_ID != null)){
+						// Anidb
+						var anidbURL = "https://anidb.net/anime/?adb.search=" + title + "&do.search=1";
+						if (this.wiki.Anidb_ID != null){
+							ul3.append(letterboxd.helpers.createReportBox("AniDB ID","No Issues","good",anidbURL));
+						}else{
+							ul3.append(letterboxd.helpers.createReportBox("AniDB ID","Missing AniDB ID","bad",anidbURL));
+						}
+
+						// Anilist
+						var anilistURL = "https://anilist.co/search/anime?search=" + title.replaceAll(' ','+') + "&sort=SEARCH_MATCH";
+						if (this.wiki.Anilist_ID != null){
+							ul3.append(letterboxd.helpers.createReportBox("AniList ID","No Issues","good",anilistURL));
+						}else{
+							ul3.append(letterboxd.helpers.createReportBox("AniList ID","Missing AniList ID","bad",anilistURL));
+						}
+
+						// MAL
+						var malURL = "https://myanimelist.net/search/all?q=" + title + "&cat=all";
+						if (this.wiki.MAL_ID != null){
+							ul3.append(letterboxd.helpers.createReportBox("MAL ID","No Issues","good",malURL));
+						}else{
+							ul3.append(letterboxd.helpers.createReportBox("MAL ID","Missing MyAnimeList ID","bad",malURL));
+						}
 					}
 				}else{
-					ul.append(letterboxd.helpers.createReportBox("WikiData","Connot find WikiData page","bad"));
+					ul.append(letterboxd.helpers.createReportBox("WikiData","Cannot find WikiData page","bad"));
 				}
 
 
@@ -606,7 +655,7 @@
 						idType = "P6127";
 						break;
 				}
-				var sparqlQuery = "SELECT DISTINCT ?item ?itemLabel ?Rotten_Tomatoes_ID ?Metacritic_ID ?Letterboxd_ID ?Wikipedia ?MPAA_film_ratingLabel ?Budget ?Budget_UnitLabel ?Box_OfficeUS ?Box_OfficeUS_UnitLabel ?Box_OfficeWW ?Box_OfficeWW_UnitLabel ?Publication_Date ?Publication_Date_Backup ?Publication_Date_Origin ?US_Title ?TV_Start ?TV_End WHERE {\n" +
+				var sparqlQuery = "SELECT DISTINCT ?item ?itemLabel ?Rotten_Tomatoes_ID ?Metacritic_ID ?Letterboxd_ID ?Wikipedia ?InstanceLabel ?Anidb_ID ?Anilist_ID ?MAL_ID ?MPAA_film_ratingLabel ?Budget ?Budget_UnitLabel ?Box_OfficeUS ?Box_OfficeUS_UnitLabel ?Box_OfficeWW ?Box_OfficeWW_UnitLabel ?Publication_Date ?Publication_Date_Backup ?Publication_Date_Origin ?US_Title ?TV_Start ?TV_End WHERE {\n" +
 				"  SERVICE wikibase:label { bd:serviceParam wikibase:language \"[AUTO_LANGUAGE],en\". }\n" +
 				"  {\n" +
 				"    SELECT DISTINCT ?item WHERE {\n" +
@@ -618,12 +667,16 @@
 				"  OPTIONAL { ?item wdt:P1258 ?Rotten_Tomatoes_ID. }\n" +
 				"  OPTIONAL { ?item wdt:P1712 ?Metacritic_ID. }\n" +
 				"  OPTIONAL { ?item wdt:P6127 ?Letterboxd_ID. }\n" +
+				"  OPTIONAL { ?item wdt:P5646 ?Anidb_ID. }\n" +
+				"  OPTIONAL { ?item wdt:P8729 ?Anilist_ID. }\n" +
+				"  OPTIONAL { ?item wdt:P4086 ?MAL_ID. }\n" +
 				"  OPTIONAL { ?item wdt:P1657 ?MPAA_film_rating. } \n" +
 				"  OPTIONAL {\n" +
 				"    ?Wikipedia schema:about ?item .\n" +
 				"    ?Wikipedia schema:inLanguage \"en\" .\n" +
 				"    ?Wikipedia schema:isPartOf <https://en.wikipedia.org/> .\n" +
 				"  }\n" +
+				"  OPTIONAL { ?item wdt:P31 ?Instance. } \n" +
 				"  OPTIONAL {\n" +
 				"    ?item p:P2130 ?Budget_Entry.\n" +
 				"    ?Budget_Entry ps:P2130 ?Budget.\n" +

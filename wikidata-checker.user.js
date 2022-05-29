@@ -92,6 +92,10 @@
 			imdbID: "",
 			imdbData: {state: 0, url: "", data: null, raw: null, rating: "", num_ratings: "", highest: 0, votes: new Array(10), percents: new Array(10), isMiniSeries: false, isTVEpisode: false},
 
+			// TMDB
+			tmdbID: '',
+			tmdbTV: false,
+			
 			// WikiData
 			wiki: null,
 			wikiData: {state: 0, tomatoURL: null, metaURL: "", budget: {value: null, currency: null}, boxOfficeUS: {value: null, currency: null}, boxOfficeWW: {value: null, currency: null}, mpaa: null, date: null, date_origin: null, rating: null, US_Title: null, Alt_Title: null, TV_Start: null, TV_End: null},
@@ -127,6 +131,8 @@
 					this.wikiData.state = 1;
 					if (this.imdbID != '') // IMDb should be most reliable
 						var queryString = 'https://query.wikidata.org/bigdata/namespace/wdq/sparql?format=json&query=' + letterboxd.helpers.getWikiDataQuery(this.imdbID, 'IMDB');
+					else if (this.tmdbID != '' && this.tmdbTV == true)
+						var queryString = 'https://query.wikidata.org/bigdata/namespace/wdq/sparql?format=json&query=' + letterboxd.helpers.getWikiDataQuery(this.tmdbID, 'TMDBTV');
 					else if (this.tmdbID != '') // Every page should have a TMDB ID
 						var queryString = 'https://query.wikidata.org/bigdata/namespace/wdq/sparql?format=json&query=' + letterboxd.helpers.getWikiDataQuery(this.tmdbID, 'TMDB');
 
@@ -241,6 +247,9 @@
 
 				// Separate the TMDB ID
 				if (tmdbLink != ""){
+					if (tmdbLink.includes('/tv/')){
+						this.tmdbTV = true;
+					}
 					this.tmdbID = tmdbLink.match(/(themoviedb.org\/(?:tv|movie)\/)([0-9]+)($|\/)/)[2];
 				}
 			},
@@ -457,27 +466,30 @@
 					//***********************************************
 					if (this.isAnime || (this.wiki.Anidb_ID != null || this.wiki.Anilist_ID != null || this.wiki.MAL_ID != null)){
 						// Anidb
-						var anidbURL = "https://anidb.net/anime/?adb.search=" + title + "&do.search=1";
+						var anidbSearch = "https://anidb.net/anime/?adb.search=" + title + "&do.search=1";
 						if (this.wiki.Anidb_ID != null){
+							var anidbURL = "https://anidb.net/anime/" + this.wiki.Anidb_ID.value;
 							ul3.append(letterboxd.helpers.createReportBox("AniDB ID","No Issues","good",anidbURL));
 						}else{
-							ul3.append(letterboxd.helpers.createReportBox("AniDB ID","Missing AniDB ID","bad",anidbURL));
+							ul3.append(letterboxd.helpers.createReportBox("AniDB ID","Missing AniDB ID","bad",anidbSearch));
 						}
 
 						// Anilist
-						var anilistURL = "https://anilist.co/search/anime?search=" + title.replaceAll(' ','+') + "&sort=SEARCH_MATCH";
+						var anilistSearch = "https://anilist.co/search/anime?search=" + title.replaceAll(' ','+') + "&sort=SEARCH_MATCH";
 						if (this.wiki.Anilist_ID != null){
+							var anilistURL = "https://anilist.co/anime/" + this.wiki.Anilist_ID.value;
 							ul3.append(letterboxd.helpers.createReportBox("AniList ID","No Issues","good",anilistURL));
 						}else{
-							ul3.append(letterboxd.helpers.createReportBox("AniList ID","Missing AniList ID","bad",anilistURL));
+							ul3.append(letterboxd.helpers.createReportBox("AniList ID","Missing AniList ID","bad",anilistSearch));
 						}
 
 						// MAL
-						var malURL = "https://myanimelist.net/search/all?q=" + title + "&cat=all";
+						var malSearch = "https://myanimelist.net/search/all?q=" + title + "&cat=all";
 						if (this.wiki.MAL_ID != null){
+							var malURL = "https://myanimelist.net/anime/" + this.wiki.MAL_ID.value;
 							ul3.append(letterboxd.helpers.createReportBox("MAL ID","No Issues","good",malURL));
 						}else{
-							ul3.append(letterboxd.helpers.createReportBox("MAL ID","Missing MyAnimeList ID","bad",malURL));
+							ul3.append(letterboxd.helpers.createReportBox("MAL ID","Missing MyAnimeList ID","bad",malSearch));
 						}
 					}
 				}else{
@@ -655,6 +667,9 @@
 				switch(idType.toUpperCase()){
 					case "IMDB":
 						idType = "P345";
+						break;
+					case "TMDBTV":
+						idType = "P4983";
 						break;
 					case "TMDB":
 						idType = "P4947";

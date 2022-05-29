@@ -157,8 +157,8 @@
 								}
 								results.push(entry);
 
-								if (result.Instance != null){
-									if (result.Instance.includes("anime") || result.Instance == ("original video animation")){
+								if (result.InstanceLabel != null){
+									if (result.InstanceLabel.value.includes("anime") || result.InstanceLabel.value == ("original video animation")){
 										this.isAnime = true;
 									}
 								}
@@ -169,6 +169,12 @@
 							this.wiki = this.wiki.results.bindings[results[0].id];
 						}else{
 							this.wiki = this.wiki.results.bindings[0];
+							
+							if (this.wiki.InstanceLabel != null){
+								if (this.wiki.InstanceLabel.value.includes("anime") || this.wiki.InstanceLabel.value == ("original video animation")){
+									this.isAnime = true;
+								}
+							}
 						}
 
 						// Now get the OMDb before
@@ -229,7 +235,9 @@
 				}
 
 				// Separate out the ID
-				this.imdbID = imdbLink.match(/(imdb.com\/title\/)(tt[0-9]+)(\/)/)[2];
+				if (imdbLink != ""){
+					this.imdbID = imdbLink.match(/(imdb.com\/title\/)(tt[0-9]+)(\/)/)[2];
+				}
 
 				// Separate the TMDB ID
 				if (tmdbLink != ""){
@@ -265,7 +273,7 @@
 				});
 				headerText.innerText = "WikiData Report";
 				headerLink.append(headerText);
-				
+
 				// Create the Report
 				//*********************************************
 				// ul

@@ -90,7 +90,7 @@
 
 			// IMDb
 			imdbID: "",
-			imdbData: {state: 0, url: "", data: null, raw: null, rating: "", num_ratings: "", highest: 0, votes: new Array(10), percents: new Array(10), isMiniSeries: false, isTVEpisode: false},
+			imdbData: {state: 0, url: "", data: null, raw: null, state2 : 0, data2: null, rating: "", num_ratings: "", highest: 0, votes: new Array(10), percents: new Array(10), isMiniSeries: false, isTVEpisode: false, mpaa: null, meta: null},
 
 			// TMDB
 			tmdbID: '',
@@ -182,6 +182,17 @@
 								}
 							}
 						}
+						
+						// Call the IMDb main show page
+						this.imdbData.data2 = await letterboxd.helpers.getData(this.imdbData.url.replace('/ratings',''));
+						if (this.imdbData.data2 != null && this.imdbData.data2 != ""){
+							this.imdbData.data2 = letterboxd.helpers.parseHTML(this.imdbData.data2.response);
+							
+							if (this.imdbData.data2 != null){	
+								this.getIMDBAdditional();
+							}
+							this.imdbData.state2 = 1;
+						}
 
 						// Now get the OMDb before
 						var omdbString = "https://www.omdbapi.com/?apikey=afd82b43&i=" + this.imdbID + "&plot=short&r=json&tomatoes=true";
@@ -252,6 +263,30 @@
 					}
 					this.tmdbID = tmdbLink.match(/(themoviedb.org\/(?:tv|movie)\/)([0-9]+)($|\/)/)[2];
 				}
+			},
+
+			getIMDBAdditional(){
+				// First see if it has a parental rating
+				var details = this.imdbData.data2.querySelectorAll('.ipc-inline-list.ipc-inline-list--show-dividers.sc-8c396aa2-0.kqWovI.baseAlt li');
+				if (details != null){
+					for (var i = 0; i < details.length; i++){
+						var a = details[i].querySelector('a');
+						if (a != null){
+							if (a.getAttribute('href').includes('parentalguide')){
+								this.imdbData.mpaa = a.innerText.trim();
+								break;
+							}
+						}
+					}
+				}
+
+				// Next grab the metascore if it has it
+				var meta = this.imdbData.data2.querySelector('.score-meta');
+				if (meta != null){
+					this.imdbData.meta = meta.innerText.trim();
+				}
+
+				// We will not add anything yet, we will wait until we are sure WikiData is missing them
 			},
 
 			addWikiDataReport(){	
@@ -335,6 +370,8 @@
 					var metaSearchURL = "https://www.metacritic.com/search/movie/" + title + "/results";
 					if (this.wiki.Metacritic_ID != null){
 						ul.append(letterboxd.helpers.createReportBox("Meta","No Issues","good",metaSearchURL));
+					}else if(this.imdbData.meta != null){
+						ul.append(letterboxd.helpers.createReportBox("Meta","Missing Metacritic ID, but found in IMDB","bad",metaSearchURL));
 					}else if(this.omdbData.metascore != null){
 						ul.append(letterboxd.helpers.createReportBox("Meta","Missing Metacritic ID, but found in OMDb","bad",metaSearchURL));
 					}else{
@@ -348,11 +385,15 @@
 						ul.append(letterboxd.helpers.createReportBox("MPAA","No Issues","good",mpaaSearchURL));
 					}else{
 						var ratings = ["G","PG","PG-13","R","NC-17"]
-						var bad = false
-						if (this.omdbData.rated != null && ratings.includes(this.omdbData.rated))
-							bad = true;
+						var omdb = false;
+						var imdb = false;
 
-						if (bad){
+						if (this.imdbData.mpaa != null && ratings.includes(this.imdbData.mpaa)) imdb = true;
+						else if (this.omdbData.rated != null && ratings.includes(this.omdbData.rated)) omdb = true;
+
+						if (imdb){
+							ul.append(letterboxd.helpers.createReportBox("MPAA","Missing MPAA rating, but found in IMDB","bad",mpaaSearchURL));
+						}else if (omdb){
 							ul.append(letterboxd.helpers.createReportBox("MPAA","Missing MPAA rating, but found in OMDb","bad",mpaaSearchURL));
 						}else{
 							ul.append(letterboxd.helpers.createReportBox("MPAA","Missing MPAA rating","warn",mpaaSearchURL));
@@ -516,6 +557,21 @@
 					options.ontimeout = err => reject(err);
 					GM_xmlhttpRequest(options); // eslint-disable-line new-cap
 				});
+			},
+			
+			async getData(link) {
+				console.log("Wikidata-Checker | Calling: " + link);
+
+				try {
+					const res = await letterboxd.helpers.request({
+						url: link,
+						method: 'GET'
+					});
+					return {response: res.response, url: res.responseURL};
+				} catch (err) {
+					console.error(err);
+				}
+				return null;
 			},
 
 			async getWikiData(link) {	

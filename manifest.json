@@ -11,6 +11,7 @@
 
 	"permissions": [
 		"https://letterboxd.com/*",
+		"https://www.imdb.com/*",
 		"https://www.omdbapi.com/*",
 		"https://query.wikidata.org/*"
 	],

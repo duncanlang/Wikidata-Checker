@@ -85,6 +85,7 @@
 
 			running: false,
 
+			letterboxdTitle: null,
 			letterboxdYear: null,
 			omdbData: {state: 0, data: null},
 
@@ -116,6 +117,7 @@
 
 				if (document.querySelector(".number")){
 					this.letterboxdYear = document.querySelectorAll(".number a")[0].innerText;
+					this.letterboxdTitle = document.querySelector(".headline-1.js-widont.prettify").innerText;
 				}
 
 				// First Get the IMDb link
@@ -469,9 +471,11 @@
 							}
 						}
 
+						// BoxOfficeMojo and The Numbers URLs
+						var mojoURL = "https://www.boxofficemojo.com/title/" + this.imdbID;
+						var numbersURL = "https://www.the-numbers.com/custom-search?searchterm=" + this.letterboxdTitle.replace(/ /,"+");
 						// Budget
 						//***********************************************
-						var mojoURL = "https://www.boxofficemojo.com/title/" + this.imdbID;
 						if (this.wiki.Budget != null){
 							ul2.append(letterboxd.helpers.createReportBox("Budget","No Issues","good",mojoURL));
 						}else{
@@ -489,9 +493,9 @@
 						// Box Office WW
 						//***********************************************
 						if (this.wiki.Box_OfficeWW != null){
-							ul2.append(letterboxd.helpers.createReportBox("Box Office WW","No Issues","good",mojoURL));
+							ul2.append(letterboxd.helpers.createReportBox("Box Office WW","No Issues","good",numbersURL));
 						}else{
-							ul2.append(letterboxd.helpers.createReportBox("Box Office WW","Missing worldwide box office","bad",mojoURL));
+							ul2.append(letterboxd.helpers.createReportBox("Box Office WW","Missing worldwide box office","bad",numbersURL));
 						}
 					}
 

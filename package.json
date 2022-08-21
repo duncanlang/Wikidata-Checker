@@ -1,11 +1,11 @@
 {
 	"name": "wikidata-checker",
 	"version": "1.0.0",
-	"description": "",
+	"description": "Displays a report of data missing from a WikiData film page on the corresponding Letterboxd page.",
 	"scripts": {
 		"test": "eslint ."
 	},
-	"repository": "https://github.com/duncanlang/Letterboxd-Extras.git",
+	"repository": "https://github.com/duncanlang/Wikidata-Checker.git",
 	"author": "Duncan Lang (https://github.com/duncanlang)",
 	"license": "MIT",
 	"engines": {

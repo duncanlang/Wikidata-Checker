@@ -146,19 +146,19 @@
 								var result = this.wiki.results.bindings[i];
 								var entry = {id: i, score: 0};
 
-								if (result.TV_Start != null && !result.TV_Start.value.includes("-01-01T")){
+								if (result.TV_Start != null && result.TV_Start_Precision.value != "9"){
 									entry.score++;
 								}
-								if (result.TV_End != null && !result.TV_End.value.includes("-01-01T")){
+								if (result.TV_End != null && result.TV_End_Precision.value != "9"){
 									entry.score++;
 								}
-								if (result.Publication_Date != null && !result.Publication_Date.value.includes("-01-01T")){
+								if (result.Publication_Date != null && result.Publication_Date_Precision.value != "9"){
 									entry.score++;
 								}
-								if (result.Publication_Date_Origin != null && !result.Publication_Date_Origin.value.includes("-01-01T")){
+								if (result.Publication_Date_Origin != null && result.Publication_Date_Origin_Precision.value != "9"){
 									entry.score++;
 								}
-								if (result.Publication_Date_Backup != null && !result.Publication_Date_Backup.value.includes("-01-01T")){
+								if (result.Publication_Date_Backup != null && result.Publication_Date_Backup_Precision.value != "9"){
 									entry.score++;
 								}
 								results.push(entry);
@@ -383,7 +383,7 @@
 						var hasOriginDate = false;
 						if (this.wiki.Publication_Date_Origin != null){
 							hasOriginDate = true;
-							if (this.wiki.Publication_Date_Origin.value.includes("-01-01T")){
+							if (this.wiki.Publication_Date_Origin_Precision.value == "9"){
 								ul.append(letterboxd.helpers.createReportBox("Origin Date","Country of Origin release date missing full date (year only)","warn",releaseInfoUrl));
 							}else{
 								ul.append(letterboxd.helpers.createReportBox("Origin Date","No Issues","good",releaseInfoUrl));
@@ -396,7 +396,7 @@
 						var hasUSDate = false;
 						if (this.wiki.Publication_Date != null){
 							hasUSDate = true;
-							if (this.wiki.Publication_Date.value.includes("-01-01T")){
+							if (this.wiki.Publication_Date_Precision.value == "9"){
 								ul.append(letterboxd.helpers.createReportBox("USA Date","US release date missing full date (year only)","warn",releaseInfoUrl));
 							}else{
 								ul.append(letterboxd.helpers.createReportBox("USA Date","No Issues","good",releaseInfoUrl));
@@ -411,7 +411,7 @@
 
 						// Backup Date
 						if (this.wiki.Publication_Date_Backup != null){
-							if (this.wiki.Publication_Date_Backup.value.includes("-01-01T")){
+							if (this.wiki.Publication_Date_Backup_Precision.value == "9"){
 								var state  = "warn";
 								if (hasUSDate || hasOriginDate){
 									state  = "good";
@@ -664,6 +664,20 @@
 			},
 			
 			getWikiDataQuery(id, idType){
+				/* WikiData Date Precision values:
+				0 - billion years
+				1 - hundred million years
+				6 - millennium
+				7 - century
+				8 - decade
+				9 - year
+				10 - month
+				11 - day
+				12 - hour
+				13 - minute
+				14 - second
+				*/
+				
 				switch(idType.toUpperCase()){
 					case "IMDB":
 						idType = "P345";
@@ -678,7 +692,7 @@
 						idType = "P6127";
 						break;
 				}
-				var sparqlQuery = "SELECT DISTINCT ?item ?itemLabel ?Rotten_Tomatoes_ID ?Metacritic_ID ?Letterboxd_ID ?Wikipedia ?InstanceLabel ?Anidb_ID ?Anilist_ID ?MAL_ID ?MPAA_film_ratingLabel ?Budget ?Budget_UnitLabel ?Box_OfficeUS ?Box_OfficeUS_UnitLabel ?Box_OfficeWW ?Box_OfficeWW_UnitLabel ?Publication_Date ?Publication_Date_Backup ?Publication_Date_Origin ?US_Title ?TV_Start ?TV_End WHERE {\n" +
+				var sparqlQuery = "SELECT DISTINCT ?item ?itemLabel ?Rotten_Tomatoes_ID ?Metacritic_ID ?Letterboxd_ID ?Wikipedia ?InstanceLabel ?Anidb_ID ?Anilist_ID ?MAL_ID ?MPAA_film_ratingLabel ?Budget ?Budget_UnitLabel ?Box_OfficeUS ?Box_OfficeUS_UnitLabel ?Box_OfficeWW ?Box_OfficeWW_UnitLabel ?Publication_Date ?Publication_Date_Precision ?Publication_Date_Backup ?Publication_Date_Backup_Precision ?Publication_Date_Origin ?Publication_Date_Origin_Precision ?US_Title ?TV_Start ?TV_Start_Precision ?TV_End ?TV_End_Precision WHERE {\n" +
 				"  SERVICE wikibase:label { bd:serviceParam wikibase:language \"[AUTO_LANGUAGE],en\". }\n" +
 				"  {\n" +
 				"    SELECT DISTINCT ?item WHERE {\n" +
@@ -747,11 +761,13 @@
 				"    ?item p:P577 ?Publication_Date_entry.\n" +
 				"    ?Publication_Date_entry ps:P577 ?Publication_Date;\n" +
 				"      pq:P291 wd:Q30.\n" +
+				"    ?Publication_Date_entry psv:P577 [wikibase:timePrecision ?Publication_Date_Precision].\n" +
 				"    MINUS { ?Publication_Date_entry wikibase:rank wikibase:DeprecatedRank. }\n" +
 				"  }\n" +
 				"  OPTIONAL {\n" +
 				"    ?item p:P577 ?Publication_Date_Backup_entry.\n" +
 				"    ?Publication_Date_Backup_entry ps:P577 ?Publication_Date_Backup.\n" +
+				"    ?Publication_Date_Backup_entry psv:P577 [wikibase:timePrecision ?Publication_Date_Backup_Precision].\n" +
 				"    FILTER NOT EXISTS { ?Publication_Date_Backup_entry pq:P291 [] }\n" +
 				"    MINUS { ?Publication_Date_Backup_entry wikibase:rank wikibase:DeprecatedRank. }\n" +
 				"  }\n" +
@@ -761,6 +777,7 @@
 				"      ?item p:P577 ?Date_Origin_entry.\n" +
 				"      ?Date_Origin_entry ps:P577 ?Publication_Date_Origin;\n" +
 				"        pq:P291 ?Country_Of_Origin.\n" +
+				"      ?Date_Origin_entry psv:P577 [wikibase:timePrecision ?Publication_Date_Origin_Precision].\n" +
 				"      MINUS { ?Date_Origin_entry wikibase:rank wikibase:DeprecatedRank. }\n" +
 				"    }\n" +
 				"  }\n" +
@@ -769,8 +786,18 @@
 				"    ?Title_Entry ps:P1476 ?US_Title;\n" +
 				"      pq:P3005 wd:Q30.\n" +
 				"  }\n" +
-				"  OPTIONAL { ?item wdt:P580 ?TV_Start. }\n" +
-				"  OPTIONAL { ?item wdt:P582 ?TV_End. }\n" +
+				"  OPTIONAL { \n" +
+				"    ?item p:P580 ?TV_Start_entry.\n" +
+				"    ?TV_Start_entry ps:P580 ?TV_Start.\n" +
+				"    ?TV_Start_entry psv:P580 [wikibase:timePrecision ?TV_Start_Precision].\n" +
+				"    MINUS { ?TV_Start_entry wikibase:rank wikibase:DeprecatedRank. }\n" +
+				"  }\n" +
+				"  OPTIONAL { \n" +
+				"    ?item p:P582 ?TV_End_entry.\n" +
+				"    ?TV_End_entry ps:P582 ?TV_End.\n" +
+				"    ?TV_End_entry psv:P582 [wikibase:timePrecision ?TV_End_Precision].\n" +
+				"    MINUS { ?TV_End_entry wikibase:rank wikibase:DeprecatedRank. }\n" +
+				"  }\n" +
 				"}";
 				
 				return sparqlQuery;

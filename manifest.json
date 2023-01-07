@@ -2,7 +2,7 @@
 	"manifest_version": 2,
 	"name": "WikiData Report",
 	"description": "Displays a report of data missing from a WikiData film page on the corresponding Letterboxd page.",
-	"version": "1.0.0",
+	"version": "1.1.0",
 	"minimum_chrome_version": "60.0.3112",
 
 	"icons": {

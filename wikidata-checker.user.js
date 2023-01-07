@@ -388,7 +388,7 @@
 					if (this.wiki.MPAA_film_ratingLabel != null){
 						ul.append(letterboxd.helpers.createReportBox("MPAA","No Issues","good",mpaaSearchURL));
 					}else{
-						var ratings = ["G","PG","PG-13","R","NC-17"]
+						var ratings = ["G","PG","PG-13","R","NC-17","X","M","GP","M/PG"]
 						var omdb = false;
 						var imdb = false;
 

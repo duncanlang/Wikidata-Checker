@@ -297,7 +297,7 @@
 				// Create Section
 				//*********************************************
 				const section = letterboxd.helpers.createElement('section', {
-					class: 'film-recent-reviews wikidata-report'
+					class: 'film-recent-reviews wikidata-report -clear'
 				},{
 					position: 'relative'
 				});				

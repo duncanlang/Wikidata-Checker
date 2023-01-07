@@ -313,6 +313,8 @@
 				});
 				if (this.wiki != null)
 					headerLink.setAttribute('href', this.wiki.item.value);
+				else
+					headerLink.setAttribute('href', 'https://www.wikidata.org/');
 				heading.append(headerLink);
 
 				const headerText = letterboxd.helpers.createElement('span', {

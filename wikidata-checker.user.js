@@ -269,7 +269,7 @@
 
 			getIMDBAdditional(){
 				// First see if it has a parental rating
-				var details = this.imdbData.data2.querySelectorAll('.ipc-inline-list.ipc-inline-list--show-dividers.sc-8c396aa2-0.kqWovI.baseAlt li');
+				var details = this.imdbData.data2.querySelectorAll('.ipc-inline-list.ipc-inline-list--show-dividers.sc-afe43def-4.kdXikI.baseAlt li');
 				if (details != null){
 					for (var i = 0; i < details.length; i++){
 						var a = details[i].querySelector('a');
@@ -283,7 +283,7 @@
 				}
 
 				// Next grab the metascore if it has it
-				var meta = this.imdbData.data2.querySelector('.score-meta');
+				var meta = this.imdbData.data2.querySelector('.metacritic-score-box');
 				if (meta != null){
 					this.imdbData.meta = meta.innerText.trim();
 				}
@@ -362,6 +362,7 @@
 					//***********************************************
 					var tomatoSearchURL = "https://www.rottentomatoes.com/search?search=" + title;
 					if (this.wiki.Rotten_Tomatoes_ID != null){
+						tomatoSearchURL = "https://www.rottentomatoes.com/" +  this.wiki.Rotten_Tomatoes_ID.value;
 						ul.append(letterboxd.helpers.createReportBox("Tomato","No Issues","good",tomatoSearchURL));
 					}else if(this.omdbData.tomatoURL != null){
 						ul.append(letterboxd.helpers.createReportBox("Tomato","Missing Rotten Tomatoes ID, but found in OMDb","bad",tomatoSearchURL));
@@ -371,8 +372,14 @@
 
 					// Meta
 					//***********************************************
-					var metaSearchURL = "https://www.metacritic.com/search/movie/" + title + "/results";
+					var metaSearchURL = "https://www.metacritic.com/search/" + title;
+					if (this.tmdbTV == true){
+						metaSearchURL += "/?page=1&category=1";
+					}else{
+						metaSearchURL += "/?page=1&category=2";
+					}
 					if (this.wiki.Metacritic_ID != null){
+						metaSearchURL = "https://www.metacritic.com/" +  this.wiki.Metacritic_ID.value;
 						ul.append(letterboxd.helpers.createReportBox("Meta","No Issues","good",metaSearchURL));
 					}else if(this.imdbData.meta != null){
 						ul.append(letterboxd.helpers.createReportBox("Meta","Missing Metacritic ID, but found in IMDB","bad",metaSearchURL));
@@ -384,7 +391,8 @@
 
 					// MPAA
 					//***********************************************
-					var mpaaSearchURL = "https://www.filmratings.com/Search?filmTitle=" + title
+					//var mpaaSearchURL = "https://www.filmratings.com/Search?filmTitle=" + title
+					var mpaaSearchURL = 'https://www.imdb.com/title/' + this.imdbID + '/parentalguide';
 					if (this.wiki.MPAA_film_ratingLabel != null){
 						ul.append(letterboxd.helpers.createReportBox("MPAA","No Issues","good",mpaaSearchURL));
 					}else{
@@ -507,6 +515,36 @@
 						ul3.append(letterboxd.helpers.createReportBox("Letterboxd ID","No Issues","good"));
 					}else{
 						ul3.append(letterboxd.helpers.createReportBox("Letterboxd ID","Missing Letterboxd ID","bad"));
+					}
+
+					// MUBI ID
+					//***********************************************
+					var mubiUrl = 'https://mubi.com/en/search/films?query=' + title + '=&page=1&filterShowing=false';
+					if (this.wiki.Mubi_ID != null){
+						mubiUrl = 'https://mubi.com/films/' + this.wiki.Mubi_ID.value;
+						ul3.append(letterboxd.helpers.createReportBox("MUBI ID","No Issues","good",mubiUrl));
+					}else{
+						ul3.append(letterboxd.helpers.createReportBox("MUBI ID","Missing MUBI ID","bad",mubiUrl));
+					}
+
+					// FilmAffinity ID
+					//***********************************************
+					var filmAffUrl = 'https://www.filmaffinity.com/us/earch.php?stext=' + title;
+					if (this.wiki.FilmAffinity_ID != null){
+						filmAffUrl = 'https://www.filmaffinity.com/en/film' + this.wiki.FilmAffinity_ID.value + '.html'
+						ul3.append(letterboxd.helpers.createReportBox("FilmAffinity ID","No Issues","good",filmAffUrl));
+					}else{
+						ul3.append(letterboxd.helpers.createReportBox("FilmAffinity ID","Missing FilmAffinity ID","bad",filmAffUrl));
+					}
+
+					// Plex Media ID
+					//***********************************************
+					var plexUrl = 'https://app.plex.tv/desktop/#!/search?pivot=top&query=' + title
+					if (this.wiki.Plex_ID != null){
+						plexUrl = 'https://app.plex.tv/desktop/#!/provider/tv.plex.provider.metadata/details?key=/library/metadata/' + this.wiki.Plex_ID.value;
+						ul3.append(letterboxd.helpers.createReportBox("Plex ID","No Issues","good",plexUrl));
+					}else{
+						ul3.append(letterboxd.helpers.createReportBox("Plex ID","Missing Plex ID","bad",plexUrl));
 					}
 
 					// ANIME IDS
@@ -754,7 +792,7 @@
 						idType = "P6127";
 						break;
 				}
-				var sparqlQuery = "SELECT DISTINCT ?item ?itemLabel ?Rotten_Tomatoes_ID ?Metacritic_ID ?Letterboxd_ID ?Wikipedia ?InstanceLabel ?Anidb_ID ?Anilist_ID ?MAL_ID ?MPAA_film_ratingLabel ?Budget ?Budget_UnitLabel ?Box_OfficeUS ?Box_OfficeUS_UnitLabel ?Box_OfficeWW ?Box_OfficeWW_UnitLabel ?Publication_Date ?Publication_Date_Precision ?Publication_Date_Backup ?Publication_Date_Backup_Precision ?Publication_Date_Origin ?Publication_Date_Origin_Precision ?US_Title ?TV_Start ?TV_Start_Precision ?TV_End ?TV_End_Precision WHERE {\n" +
+				var sparqlQuery = "SELECT DISTINCT ?item ?itemLabel ?Rotten_Tomatoes_ID ?Metacritic_ID ?Letterboxd_ID ?Wikipedia ?InstanceLabel ?Anidb_ID ?Anilist_ID ?MAL_ID ?Mubi_ID ?Plex_ID ?FilmAffinity_ID ?MPAA_film_ratingLabel ?Budget ?Budget_UnitLabel ?Box_OfficeUS ?Box_OfficeUS_UnitLabel ?Box_OfficeWW ?Box_OfficeWW_UnitLabel ?Publication_Date ?Publication_Date_Precision ?Publication_Date_Backup ?Publication_Date_Backup_Precision ?Publication_Date_Origin ?Publication_Date_Origin_Precision ?US_Title ?TV_Start ?TV_Start_Precision ?TV_End ?TV_End_Precision WHERE {\n" +
 				"  SERVICE wikibase:label { bd:serviceParam wikibase:language \"[AUTO_LANGUAGE],en\". }\n" +
 				"  {\n" +
 				"    SELECT DISTINCT ?item WHERE {\n" +
@@ -769,6 +807,9 @@
 				"  OPTIONAL { ?item wdt:P5646 ?Anidb_ID. }\n" +
 				"  OPTIONAL { ?item wdt:P8729 ?Anilist_ID. }\n" +
 				"  OPTIONAL { ?item wdt:P4086 ?MAL_ID. }\n" +
+				"  OPTIONAL { ?item wdt:P7299 ?Mubi_ID. }\n" +
+				"  OPTIONAL { ?item wdt:P11460 ?Plex_ID. }\n" +
+				"  OPTIONAL { ?item wdt:P480 ?FilmAffinity_ID. }\n" +
 				"  OPTIONAL { ?item wdt:P1657 ?MPAA_film_rating. } \n" +
 				"  OPTIONAL {\n" +
 				"    ?Wikipedia schema:about ?item .\n" +

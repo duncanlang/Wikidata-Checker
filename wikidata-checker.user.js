@@ -529,7 +529,7 @@
 
 					// FilmAffinity ID
 					//***********************************************
-					var filmAffUrl = 'https://www.filmaffinity.com/us/earch.php?stext=' + title;
+					var filmAffUrl = 'https://www.filmaffinity.com/us/search.php?stext=' + title;
 					if (this.wiki.FilmAffinity_ID != null){
 						filmAffUrl = 'https://www.filmaffinity.com/en/film' + this.wiki.FilmAffinity_ID.value + '.html'
 						ul3.append(letterboxd.helpers.createReportBox("FilmAffinity ID","No Issues","good",filmAffUrl));

@@ -798,6 +798,7 @@
 				"    SELECT DISTINCT ?item WHERE {\n" +
 				"      ?item p:" + idType + " ?statement0.\n" +
 				"      ?statement0 ps:" + idType + " \"" + id + "\".\n" +
+				"      MINUS { ?statement0 wikibase:rank wikibase:DeprecatedRank. }\n" +
 				"    }\n" +
 				"    LIMIT 10\n" +
 				"  }\n" +

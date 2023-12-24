@@ -215,6 +215,9 @@
 								this.omdbData.tomatoURL = this.omdbData.data.tomatoURL;
 						}
 
+						if (this.wiki.Anidb_ID != null || this.wiki.Anilist_ID != null || this.wiki.MAL_ID != null){
+							this.isAnime = true;
+						}
 
 						this.wikiData.state = 2;
 					}else{
@@ -341,6 +344,12 @@
 					class: 'avatar-list'
 				});
 				section.append(ul3);
+				
+				// ul4
+				const ul4 = letterboxd.helpers.createElement('ul', {
+					class: 'avatar-list'
+				});
+				section.append(ul4);
 
 
 				var title = document.querySelector(".headline-1.js-widont.prettify").innerText;
@@ -531,10 +540,20 @@
 					//***********************************************
 					var filmAffUrl = 'https://www.filmaffinity.com/us/search.php?stext=' + title;
 					if (this.wiki.FilmAffinity_ID != null){
-						filmAffUrl = 'https://www.filmaffinity.com/en/film' + this.wiki.FilmAffinity_ID.value + '.html'
+						filmAffUrl = 'https://www.filmaffinity.com/en/film' + this.wiki.FilmAffinity_ID.value + '.html';
 						ul3.append(letterboxd.helpers.createReportBox("FilmAffinity ID","No Issues","good",filmAffUrl));
 					}else{
 						ul3.append(letterboxd.helpers.createReportBox("FilmAffinity ID","Missing FilmAffinity ID","bad",filmAffUrl));
+					}
+
+					// Senscritique ID
+					//***********************************************
+					var sensUrl = 'https://www.senscritique.com/search?query=' + title;
+					if (this.wiki.Senscritique_ID != null){
+						sensUrl = 'https://www.senscritique.com/film/' + this.wiki.Senscritique_ID.value;
+						ul3.append(letterboxd.helpers.createReportBox("SensCritique","No Issues","good",sensUrl));
+					}else{
+						ul3.append(letterboxd.helpers.createReportBox("SensCritique","Missing SensCritique ID","bad",sensUrl));
 					}
 
 					// Plex Media ID
@@ -546,35 +565,76 @@
 					}else{
 						ul3.append(letterboxd.helpers.createReportBox("Plex ID","Missing Plex ID","bad",plexUrl));
 					}
+					
+					// IMDB ID
+					//***********************************************
+					if (this.imdbID == null || this.imdbID == ""){
+						var imdbUrl = 'https://www.imdb.com/title/' + this.imdbID
+						if (this.wiki.IMDB_ID != null){
+							ul3.append(letterboxd.helpers.createReportBox("IMDb ID","No Issues","good",imdbUrl));
+						}else{
+							ul3.append(letterboxd.helpers.createReportBox("IMDb ID","Missing IMDb ID","bad",imdbUrl));
+						}
+					}
+
+					// TMDB ID
+					//***********************************************
+					if ((this.imdbID == null || this.imdbID == "") && this.tmdbTV == true){
+						var tmdbUrl = 'https://www.themoviedb.org/movie/' + this.tmdbID
+						if (this.wiki.TMDBTV_ID != null){
+							ul3.append(letterboxd.helpers.createReportBox("TMDB ID","No Issues","good",tmdbUrl));
+						}else{
+							ul3.append(letterboxd.helpers.createReportBox("TMDB ID","Missing TMDB ID","bad",tmdbUrl));
+						}
+					}else if ((this.imdbID == null || this.imdbID == "") && this.tmdbTV == false){
+						var tmdbUrl = 'https://www.themoviedb.org/tv/' + this.tmdbID
+						if (this.wiki.TMDB_ID != null){
+							ul3.append(letterboxd.helpers.createReportBox("TMDB ID","No Issues","good",tmdbUrl));
+						}else{
+							ul3.append(letterboxd.helpers.createReportBox("TMDB ID","Missing TMDB ID","bad",tmdbUrl));
+						}
+					}
+
+					// MyDramaList ID
+					//***********************************************
+					// Only display if country of origin is Japan, China, or South Korea, and not Anime
+					if ((this.wiki.Country_of_Origin != null && (this.wiki.Country_of_Origin.value.endsWith("Q17") || this.wiki.Country_of_Origin.value.endsWith("Q148") || this.wiki.Country_of_Origin.value.endsWith("Q884")) && this.isAnime == false) || this.wiki.MyDramaList_ID != null){
+						var dramalistUrl = 'https://mydramalist.com/search?q=' + title
+						if (this.wiki.MyDramaList_ID != null){
+							ul3.append(letterboxd.helpers.createReportBox("MyDramaList","No Issues","good",dramalistUrl));
+						}else{
+							ul3.append(letterboxd.helpers.createReportBox("MyDramaList","Missing MyDramaList","warn",dramalistUrl));
+						}
+					}
 
 					// ANIME IDS
 					//***********************************************
-					if (this.isAnime || (this.wiki.Anidb_ID != null || this.wiki.Anilist_ID != null || this.wiki.MAL_ID != null)){
+					if (this.isAnime){
 						// Anidb
 						var anidbSearch = "https://anidb.net/anime/?adb.search=" + title + "&do.search=1";
 						if (this.wiki.Anidb_ID != null){
 							var anidbURL = "https://anidb.net/anime/" + this.wiki.Anidb_ID.value;
-							ul3.append(letterboxd.helpers.createReportBox("AniDB ID","No Issues","good",anidbURL));
+							ul4.append(letterboxd.helpers.createReportBox("AniDB ID","No Issues","good",anidbURL));
 						}else{
-							ul3.append(letterboxd.helpers.createReportBox("AniDB ID","Missing AniDB ID","bad",anidbSearch));
+							ul4.append(letterboxd.helpers.createReportBox("AniDB ID","Missing AniDB ID","bad",anidbSearch));
 						}
 
 						// Anilist
 						var anilistSearch = "https://anilist.co/search/anime?search=" + title.replaceAll(' ','+') + "&sort=SEARCH_MATCH";
 						if (this.wiki.Anilist_ID != null){
 							var anilistURL = "https://anilist.co/anime/" + this.wiki.Anilist_ID.value;
-							ul3.append(letterboxd.helpers.createReportBox("AniList ID","No Issues","good",anilistURL));
+							ul4.append(letterboxd.helpers.createReportBox("AniList ID","No Issues","good",anilistURL));
 						}else{
-							ul3.append(letterboxd.helpers.createReportBox("AniList ID","Missing AniList ID","bad",anilistSearch));
+							ul4.append(letterboxd.helpers.createReportBox("AniList ID","Missing AniList ID","bad",anilistSearch));
 						}
 
 						// MAL
 						var malSearch = "https://myanimelist.net/search/all?q=" + title + "&cat=all";
 						if (this.wiki.MAL_ID != null){
 							var malURL = "https://myanimelist.net/anime/" + this.wiki.MAL_ID.value;
-							ul3.append(letterboxd.helpers.createReportBox("MAL ID","No Issues","good",malURL));
+							ul4.append(letterboxd.helpers.createReportBox("MAL ID","No Issues","good",malURL));
 						}else{
-							ul3.append(letterboxd.helpers.createReportBox("MAL ID","Missing MyAnimeList ID","bad",malSearch));
+							ul4.append(letterboxd.helpers.createReportBox("MAL ID","Missing MyAnimeList ID","bad",malSearch));
 						}
 					}
 				}else{
@@ -792,7 +852,7 @@
 						idType = "P6127";
 						break;
 				}
-				var sparqlQuery = "SELECT DISTINCT ?item ?itemLabel ?Rotten_Tomatoes_ID ?Metacritic_ID ?Letterboxd_ID ?Wikipedia ?InstanceLabel ?Anidb_ID ?Anilist_ID ?MAL_ID ?Mubi_ID ?Plex_ID ?FilmAffinity_ID ?MPAA_film_ratingLabel ?Budget ?Budget_UnitLabel ?Box_OfficeUS ?Box_OfficeUS_UnitLabel ?Box_OfficeWW ?Box_OfficeWW_UnitLabel ?Publication_Date ?Publication_Date_Precision ?Publication_Date_Backup ?Publication_Date_Backup_Precision ?Publication_Date_Origin ?Publication_Date_Origin_Precision ?US_Title ?TV_Start ?TV_Start_Precision ?TV_End ?TV_End_Precision WHERE {\n" +
+				var sparqlQuery = "SELECT DISTINCT ?item ?itemLabel ?Rotten_Tomatoes_ID ?Metacritic_ID ?Letterboxd_ID ?Wikipedia ?InstanceLabel ?Anidb_ID ?Anilist_ID ?MAL_ID ?Mubi_ID ?Plex_ID ?FilmAffinity_ID ?Senscritique_ID ?IMDB_ID ?TMDB_ID ?TMDBTV_ID ?MyDramaList_ID ?MPAA_film_ratingLabel ?Country_of_Origin ?Title ?Color ?Aspect_Ratio ?Duration ?Budget ?Budget_UnitLabel ?Box_OfficeUS ?Box_OfficeUS_UnitLabel ?Box_OfficeWW ?Box_OfficeWW_UnitLabel ?Publication_Date ?Publication_Date_Precision ?Publication_Date_Backup ?Publication_Date_Backup_Precision ?Publication_Date_Origin ?Publication_Date_Origin_Precision ?US_Title ?TV_Start ?TV_Start_Precision ?TV_End ?TV_End_Precision WHERE {\n" +
 				"  SERVICE wikibase:label { bd:serviceParam wikibase:language \"[AUTO_LANGUAGE],en\". }\n" +
 				"  {\n" +
 				"    SELECT DISTINCT ?item WHERE {\n" +
@@ -811,7 +871,17 @@
 				"  OPTIONAL { ?item wdt:P7299 ?Mubi_ID. }\n" +
 				"  OPTIONAL { ?item wdt:P11460 ?Plex_ID. }\n" +
 				"  OPTIONAL { ?item wdt:P480 ?FilmAffinity_ID. }\n" +
+				"  OPTIONAL { ?item wdt:P10100 ?Senscritique_ID. }\n" +
+				"  OPTIONAL { ?item wdt:P345 ?IMDB_ID. }\n" +
+				"  OPTIONAL { ?item wdt:P4947 ?TMDB_ID. }\n" +
+				"  OPTIONAL { ?item wdt:P4983 ?TMDBTV_ID. }\n" +
+				"  OPTIONAL { ?item wdt:P3868 ?MyDramaList_ID. }\n" +
 				"  OPTIONAL { ?item wdt:P1657 ?MPAA_film_rating. } \n" +
+				"  OPTIONAL { ?item wdt:P495 ?Country_of_Origin. } \n" +
+				"  OPTIONAL { ?item wdt:P1476 ?Title. } \n" +
+				"  OPTIONAL { ?item wdt:P462 ?Color. } \n" +
+				"  OPTIONAL { ?item wdt:P2061 ?Aspect_Ratio. } \n" +
+				"  OPTIONAL { ?item wdt:P2047 ?Duration. } \n" +
 				"  OPTIONAL {\n" +
 				"    ?Wikipedia schema:about ?item .\n" +
 				"    ?Wikipedia schema:inLanguage \"en\" .\n" +

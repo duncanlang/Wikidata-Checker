@@ -327,30 +327,35 @@
 
 				// Create the Report
 				//*********************************************
-				// ul
+				// ul - main row
 				const ul = letterboxd.helpers.createElement('ul', {
 					class: 'avatar-list'
 				});
 				section.append(ul);
 				
-				// ul2
+				// ul2 - budget and box office
 				const ul2 = letterboxd.helpers.createElement('ul', {
 					class: 'avatar-list'
 				});
 				section.append(ul2);
 
-				// ul3
+				// ul3 - additional IDs
 				const ul3 = letterboxd.helpers.createElement('ul', {
 					class: 'avatar-list'
 				});
 				section.append(ul3);
 				
-				// ul4
+				// ul4 - Anime IDs
 				const ul4 = letterboxd.helpers.createElement('ul', {
 					class: 'avatar-list'
 				});
 				section.append(ul4);
-
+				
+				// ul5 - technical stuff
+				const ul5 = letterboxd.helpers.createElement('ul', {
+					class: 'avatar-list'
+				});
+				section.append(ul5);
 
 				var title = document.querySelector(".headline-1.js-widont.prettify").innerText;
 				title = title.replace(/\s+/g, '+');
@@ -637,6 +642,44 @@
 							ul4.append(letterboxd.helpers.createReportBox("MAL ID","Missing MyAnimeList ID","bad",malSearch));
 						}
 					}
+
+					// TECHNICAL STUFF
+					//***********************************************
+					var imdbTitleUrl = 'https://www.imdb.com/title/' + this.imdbID + "/releaseinfo/";
+					var imdbTechUrl = 'https://www.imdb.com/title/' + this.imdbID + "/technical/";
+
+					// Title
+					//***********************************************
+					if (this.wiki.Title != null){
+						ul5.append(letterboxd.helpers.createReportBox("Title","No Issues","good",imdbTitleUrl));
+					}else{
+						ul5.append(letterboxd.helpers.createReportBox("Title","Missing title","bad",imdbTitleUrl));
+					}
+					
+					// Color
+					//***********************************************
+					if (this.wiki.Color != null){
+						ul5.append(letterboxd.helpers.createReportBox("Color","No Issues","good",imdbTechUrl));
+					}else{
+						ul5.append(letterboxd.helpers.createReportBox("Color","Missing color","bad",imdbTechUrl));
+					}
+					
+					// Duration
+					//***********************************************
+					if (this.wiki.Duration != null){
+						ul5.append(letterboxd.helpers.createReportBox("Duration","No Issues","good",imdbTechUrl));
+					}else{
+						ul5.append(letterboxd.helpers.createReportBox("Duration","Missing duration","bad",imdbTechUrl));
+					}
+					
+					// Aspect Ratio
+					//***********************************************
+					if (this.wiki.Aspect_Ratio != null){
+						ul5.append(letterboxd.helpers.createReportBox("Aspect Ratio","No Issues","good",imdbTechUrl));
+					}else{
+						ul5.append(letterboxd.helpers.createReportBox("Aspect Ratio","Missing aspect ratio","warn",imdbTechUrl));
+					}
+
 				}else{
 					ul.append(letterboxd.helpers.createReportBox("WikiData","Cannot find WikiData page","bad"));
 				}

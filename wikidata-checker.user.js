@@ -115,9 +115,9 @@
 
 				this.running = true;
 
-				if (document.querySelector(".number")){
-					this.letterboxdYear = document.querySelectorAll(".number a")[0].innerText;
-					this.letterboxdTitle = document.querySelector(".headline-1.js-widont.prettify").innerText;
+				if (document.querySelector(".metablock .releaseyear")){
+					this.letterboxdYear = document.querySelectorAll(".metablock .releaseyear a")[0].innerText;
+					this.letterboxdTitle = document.querySelector(".filmtitle span").innerText;
 				}
 
 				// First Get the IMDb link
@@ -340,9 +340,7 @@
 				});
 				section.append(ul3);
 
-
-				var title = document.querySelector(".headline-1.js-widont.prettify").innerText;
-				title = title.replace(/\s+/g, '+');
+				var title = this.letterboxdYear;
 
 				if (this.wiki != null){
 					// Add the Wikipedia Link

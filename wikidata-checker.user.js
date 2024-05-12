@@ -357,7 +357,7 @@
 				});
 				section.append(ul5);
 
-				var title = this.letterboxdYear;
+				var title = this.letterboxdTitle;
 
 				if (this.wiki != null){
 					// Add the Wikipedia Link

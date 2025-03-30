@@ -115,9 +115,9 @@
 
 				this.running = true;
 
-				if (document.querySelector(".metablock .releaseyear")){
+				if (document.querySelector(".releaseyear a") != null && document.querySelector(".headline-1.primaryname span") != null && this.letterboxdYear == null){
 					this.letterboxdYear = document.querySelectorAll(".metablock .releaseyear a")[0].innerText;
-					this.letterboxdTitle = document.querySelector(".filmtitle span").innerText;
+					this.letterboxdTitle = document.querySelector(".headline-1.primaryname span").innerText;
 				}
 
 				// First Get the IMDb link
@@ -128,7 +128,7 @@
 
 				var canAdd = (document.querySelector('.sidebar'))
 
-				if ((this.imdbID != "" || this.tmdbID != '') && this.wikiData.state < 1 && canAdd){
+				if ((this.imdbID != "" || this.tmdbID != '') && this.wikiData.state < 1 && canAdd && this.letterboxdYear != null && this.letterboxdTitle != null){
 					// Call WikiData
 					this.wikiData.state = 1;
 					if (this.imdbID != '') // IMDb should be most reliable

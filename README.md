@@ -1,9 +1,8 @@
-# Wikidata-Checker
-A simple tool to see if movies are missing Wikidata properties
+# Letterboxd WikiData Film Report
+A simple tool to that creates a 'report' on Letterboxd film pages for the corresponding WikiData item.
+Useful to quickly see what data is missing from a film on WikiData.
 
-Displays a 'report' of the wikidata properties I use for my letterboxd-extras addon onto Letterboxd movies pages.
-
-This addon is mainly for my own personal use as I have being update film data on WikiData.
+This extension is mainly for my own personal use as I have being update film data on WikiData.
 
 # Images 
 Report for film with complete data:

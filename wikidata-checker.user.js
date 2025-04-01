@@ -84,6 +84,8 @@
 
 	const letterboxd = {
 
+		debug: true,
+
 		overview: {
 
 			lastLocation: window.location.pathname,
@@ -292,7 +294,6 @@
 				}
 
 				// Call WikiData Dates
-				// ok so this timeouts with https://letterboxd.com/film/wolfs/ wtf??
 				if (this.idsCollected == true && this.wikiDataDates.state == 0){
 					this.wikiDataDates.state = 1;
 					var queryString = 'https://query.wikidata.org/bigdata/namespace/wdq/sparql?format=json&query=' + letterboxd.helpers.getWikiDataDatesQuery(this.imdbID, this.tmdbID, this.letterboxdData.id, this.tmdbTV);
@@ -346,6 +347,9 @@
 						this.checkIfReportShouldBeAdded();
 					}
 				}
+
+				// todo: use promise all?
+				// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all
 
 				this.checkIfReportShouldBeAdded();
 
@@ -458,12 +462,20 @@
 			},
 
 			checkIfReportShouldBeAdded(){
-				//console.log('sidebar: ' + (document.querySelector('.sidebar') != null) + '|wikidata state: ' + this.wikiData.state + "|wikidata dates state: " + this.wikiDataDates.state + "|imdb state: " + this.imdbData.state);
+				if (document.querySelector('.sidebar') == null)
+					return;
+				if (this.reportAdded)
+					return;
+				if (this.wikiData.state < 2)
+					return;
+				if (this.wikiDataDates.state < 2)
+					return;
+				if (this.imdbData.state > 0 && this.imdbData.state < 2)
+					return;
+
 				// Add the report
-				if (document.querySelector('.sidebar') != null && this.reportAdded == false && this.wikiData.state == 2 && this.wikiDataDates.state == 2 && (this.imdbData.state > 1 || this.imdbData.state < 0)){
-					this.addWikiDataReport();
-					this.reportAdded = true;
-				}
+				this.addWikiDataReport();
+				this.reportAdded = true;
 			},
 
 			getIDs(){
@@ -890,10 +902,6 @@
 				const ul = letterboxd.helpers.createElement('ul', { class: 'avatar-list' },{ });
 				dates.append(ul);
 
-				// TODO:
-				// need to handle cities the same way I handle them in letterboxd extras
-				// need to handle worldwide
-
 				// DATES
 				//***********************************************
 				// TV Dates
@@ -922,10 +930,16 @@
 						var country = this.wikiData.countries[i];
 						var reportTitle = "Date - " + country.label;
 						var hasFullDate = this.wikiDataDates.dates.some(item => item.country == country.id && item.precision >= 11);
+						var hasFullDateWW = this.wikiDataDates.dates.some(item => item.country.endsWith('Q13780930') && item.precision >= 11);
+						var hasNoCountryDate = this.wikiDataDates.dates.some(item => item.country == '' && item.precision >= 11);
 						var hasPartialDate = this.wikiDataDates.dates.some(item => item.country == country.id && item.precision < 11);
 
 						if (hasFullDate){
 							ul.append(letterboxd.helpers.createReportBox(reportTitle, country.label + " date - No issues", "good", releaseInfoUrl));
+						}else if (hasFullDateWW){
+							ul.append(letterboxd.helpers.createReportBox(reportTitle, country.label + " date - Found Worldwide date", "good", releaseInfoUrl));
+						}else if (hasNoCountryDate){
+							ul.append(letterboxd.helpers.createReportBox(reportTitle, country.label + " date - Found date with no country", "warn", releaseInfoUrl));
 						}else if(hasPartialDate){
 							ul.append(letterboxd.helpers.createReportBox(reportTitle, country.label + " date - missing full date (year only)", "bad", releaseInfoUrl));
 						}else{
@@ -937,10 +951,16 @@
 					if (!this.wikiData.countries.some(item => item.id.endsWith("Q30"))){
 						var reportTitle = "Date - United States"
 						var hasFullDate = this.wikiDataDates.dates.some(item => item.country.endsWith("Q30") && item.precision >= 11);
+						var hasFullDateWW = this.wikiDataDates.dates.some(item => item.country.endsWith('Q13780930') && item.precision >= 11);
+						var hasNoCountryDate = this.wikiDataDates.dates.some(item => item.country == '' && item.precision >= 11);
 						var hasPartialDate = this.wikiDataDates.dates.some(item => item.country.endsWith("Q30") && item.precision < 11);
 
 						if (hasFullDate){
 							ul.append(letterboxd.helpers.createReportBox(reportTitle, "United States date - No issues", "good", releaseInfoUrl));
+						}else if (hasFullDateWW){
+							ul.append(letterboxd.helpers.createReportBox(reportTitle, "United States date - Found Worldwide date", "good", releaseInfoUrl));
+						}else if (hasNoCountryDate){
+							ul.append(letterboxd.helpers.createReportBox(reportTitle, "United States date - Found date with no country", "warn", releaseInfoUrl));
 						}else if(hasPartialDate){
 							ul.append(letterboxd.helpers.createReportBox(reportTitle, "United States date - missing full date (year only)", "bad", releaseInfoUrl));
 						}else{
@@ -954,10 +974,6 @@
 				const ul = letterboxd.helpers.createElement('ul', { class: 'avatar-list' },{ });
 				boxoffice.append(ul);
 
-				// TODO:
-				// make these a warning if there is no IMDB id? because then it's likely an indie movie or something
-				// make these a warning if the studios include a streaming studio? ie, netflix, apple, disney, amazon
-
 				// BoxOfficeMojo and The Numbers URLs
 				var mojoURL = "https://www.boxofficemojo.com/title/" + this.imdbID;
 				// Budget
@@ -965,7 +981,9 @@
 				if (this.wikiData.budget != ''){
 					ul.append(letterboxd.helpers.createReportBox("Budget","No Issues","good",mojoURL));
 				}else if (this.letterboxdData.streaming){
-					ul.append(letterboxd.helpers.createReportBox("Budget","Missing budget, but movie seems to be streaming","warn",mojoURL));
+					ul.append(letterboxd.helpers.createReportBox("Budget","Missing budget, but likely streaming movie","warn",mojoURL));
+				}else if (this.imdbID == ''){
+					ul.append(letterboxd.helpers.createReportBox("Budget","Missing budget, but likely indie movie","warn",mojoURL));
 				}else{
 					ul.append(letterboxd.helpers.createReportBox("Budget","Missing budget","bad",mojoURL));
 				}
@@ -975,7 +993,9 @@
 				if (this.wikiData.boxofficeUS != ''){
 					ul.append(letterboxd.helpers.createReportBox("Box Office US","No Issues","good",mojoURL));
 				}else if (this.letterboxdData.streaming){
-					ul.append(letterboxd.helpers.createReportBox("Box Office US","Missing US box office, but movie seems to be streaming","warn",mojoURL));
+					ul.append(letterboxd.helpers.createReportBox("Box Office US","Missing US box office, but likely streaming movie","warn",mojoURL));
+				}else if (this.imdbID == ''){
+					ul.append(letterboxd.helpers.createReportBox("Box Office US","Missing US box office, but likely indie movie","warn",mojoURL));
 				}else{
 					ul.append(letterboxd.helpers.createReportBox("Box Office US","Missing US box office","bad",mojoURL));
 				}
@@ -985,7 +1005,9 @@
 				if (this.wikiData.boxofficeWW != ''){
 					ul.append(letterboxd.helpers.createReportBox("Box Office WW","No Issues","good",mojoURL));
 				}else if (this.letterboxdData.streaming){
-					ul.append(letterboxd.helpers.createReportBox("Box Office WW","Missing worldwide box office, but movie seems to be streaming","warn",mojoURL));
+					ul.append(letterboxd.helpers.createReportBox("Box Office WW","Missing worldwide box office, but likely streaming movie","warn",mojoURL));
+				}else if (this.imdbID == ''){
+					ul.append(letterboxd.helpers.createReportBox("Box Office WW","Missing worldwide box office, but likely indie movie","warn",mojoURL));
 				}else{
 					ul.append(letterboxd.helpers.createReportBox("Box Office WW","Missing worldwide box office","bad",mojoURL));
 				}
@@ -1015,7 +1037,8 @@
 
 		helpers: {
 			async getData(link, method, headers, body) {
-				//console.log("Wikidata-Checker | Calling: " + link);
+				if (letterboxd.debug)
+					console.log("Wikidata-Checker | Calling: " + link);
 
 				try {
 					// Fetch options
@@ -1325,19 +1348,19 @@
 				sparqlQuery += '\n';
 
 				// Add the initial Letterboxd ID filter
-				sparqlQuery += '  { ?item p:P6127 ?letterboxdStatement. ?letterboxdStatement ps:P6127 ?letterboxdID. MINUS { ?letterboxdStatement wikibase:rank wikibase:DeprecatedRank. } }\n'
+				sparqlQuery += '  { ?item p:P6127 ?letterboxdStatement. ?letterboxdStatement ps:P6127 ?letterboxdID. }\n'
 
 				// Add the IMDB if the ID is found
 				if (imdbId != "")
-					sparqlQuery += '  UNION { ?item p:P345 ?imdbStatement. ?imdbStatement ps:P345 ?imdbID. MINUS { ?imdbStatement wikibase:rank wikibase:DeprecatedRank. } }\n'
+					sparqlQuery += '  UNION { ?item p:P345 ?imdbStatement. ?imdbStatement ps:P345 ?imdbID. }\n'
 
 				// Add the TMDB TV if the ID is found and this is a TV show
 				if (tmdbId != "" && isTV)
-					sparqlQuery += '  UNION { ?item p:P4983 ?tmdbStatement. ?tmdbStatement ps:P4983 ?tmdbID. MINUS { ?tmdbStatement wikibase:rank wikibase:DeprecatedRank. } }\n'
+					sparqlQuery += '  UNION { ?item p:P4983 ?tmdbStatement. ?tmdbStatement ps:P4983 ?tmdbID. }\n'
 				
 				// Add the TMDB ID if found and NOT a TV show
 				if (tmdbId != "" && isTV == false)
-					sparqlQuery += '  UNION { ?item p:P4947 ?tmdbStatement. ?tmdbStatement ps:P4947 ?tmdbID. MINUS { ?tmdbStatement wikibase:rank wikibase:DeprecatedRank. } }\n'
+					sparqlQuery += '  UNION { ?item p:P4947 ?tmdbStatement. ?tmdbStatement ps:P4947 ?tmdbID. }\n'
 
 				
 				// Now the full query
@@ -1346,21 +1369,19 @@
 				"\n" +
 				sparqlQuery +
 				"\n" +
-				"  OPTIONAL { ?item wdt:P495 ?Country_Of_Origin. }\n" +
-				"  OPTIONAL {\n" +
-				"    ?item p:P577 ?Entry.\n" +
-				"    ?Entry ps:P577 ?Date.\n" +
-				"    ?Entry psv:P577 [wikibase:timePrecision ?Date_Precision].\n" +
-				"    OPTIONAL { ?Entry pq:P291 ?Date_Country }.\n" +
-				"    OPTIONAL { ?Entry pq:P437 ?Date_Format }.\n" +
-				"    \n" +
+				"  ?item p:P577 ?Entry.\n" +
+				"  ?Entry ps:P577 ?Date.\n" +
+				"  ?Entry psv:P577 [wikibase:timePrecision ?Date_Precision].\n" +
+				"  OPTIONAL { \n" +
+				"    ?Entry pq:P291 ?Date_Country.\n" +
 				"    OPTIONAL {\n" +
 				"      ?Date_Country wdt:P17 ?Date_City_Country.\n" +
 				"      FILTER NOT EXISTS { ?Date_Country wdt:P31 wd:Q6256. }\n" +
 				"    }\n" +
-				"    \n" +
-				"    MINUS { ?Entry wikibase:rank wikibase:DeprecatedRank. }\n" +
-				"  }\n" +
+				"  }.\n" +
+				"  OPTIONAL { ?Entry pq:P437 ?Date_Format }.\n" +
+				"\n" +
+				"  MINUS { ?Entry wikibase:rank wikibase:DeprecatedRank. }\n" +
 				"}";
 
 				return sparqlQuery;

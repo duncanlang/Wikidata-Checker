@@ -1,0 +1,70 @@
+.twipsy-extra-in{
+    opacity: 1 !important;
+    -webkit-transition: opacity 0.25s ease-out;
+    transition: opacity 0.25s ease-out;
+}
+.twipsy-extra{
+    opacity: 0 !important;
+}
+.twipsy-extra-out{
+    opacity: 0 !important;
+    -webkit-transition: opacity 0.10s linear;
+    transition: opacity 0.10s linear;
+}
+section.wikidata-report{
+    margin-bottom: 20px;
+    position: relative;
+}
+.report-headertext{
+    display: inline;
+}
+.report-subheader{
+    display: inline;
+    font-size: 9px;
+    margin-left: 15px;
+}
+.report-item{
+    display: inline-block;
+    height: 60px;
+    width: 85px;
+    margin-left: 5px;
+    margin-right: 5px;
+    justify-content: center;
+    text-align: center;
+    font-size: 15px;
+}
+.report-state-item{
+    border: solid 1px white;
+    height: 20px;
+    width: 20px;
+    border-radius: 100px;
+    justify-content: center;
+    text-align: center;
+    font: 15px;
+    display: inline-block;
+}
+.report-state-good{
+    color: #1dd1a1;
+    border-color: #1dd1a1;
+}
+.report-state-warn{
+    color: #feca57;
+    border-color: #feca57;
+}
+.report-state-bad{
+    color: #ff6b6b;
+    border-color: #ff6b6b;
+}
+.report-item a{
+    display: block;
+    color: #9ab;
+}
+.report-item a:hover{
+    color: #40bcf4;
+    cursor: pointer;
+}
+.report-ext-link{
+    display: block;
+    width: 100%;
+    margin-bottom: 5px;
+}

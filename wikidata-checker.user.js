@@ -1,115 +1,28 @@
-/* global GM_xmlhttpRequest */
-// ==UserScript==
-// @name         Letterboxd Extras
-// @namespace    https://github.com/duncanlang
-// @version      1.0.0
-// @description  Adds a few additional features to Letterboxd.
-// @author       Duncan Lang
-// @match        https://letterboxd.com/*
-// @connect      https://www.imdb.com
-// @grant        GM_xmlhttpRequest
-// @grant        GM_addStyle
-// @run-at       document-start
-// ==/UserScript==
-
-
 // setTimeout(function(){ debugger; }, 5000);  - used to freeze the inspector
 
-(function() { // eslint-disable-line wrap-iife
+if (window.location.hostname === 'letterboxd.com') {
+	if (window.location.pathname.startsWith('/film/') && !window.location.pathname.includes("ratings")) {
+		WikiDataChecker();
+	}
+}
 
-	'use strict'; // eslint-disable-line strict
-	
-	/* eslint-disable */
-	GM_addStyle(`
-		.twipsy-extra-in{
-			opacity: 1 !important;
-			-webkit-transition: opacity 0.25s ease-out;
-			transition: opacity 0.25s ease-out;
-		}
-		.twipsy-extra{
-			opacity: 0 !important;
-		}
-		.twipsy-extra-out{
-			opacity: 0 !important;
-			-webkit-transition: opacity 0.10s linear;
-			transition: opacity 0.10s linear;
-		}
-		.report-item{
-			display: inline-block;
-			height: 60px;
-			width: 85px;
-			margin-left: 5px;
-			margin-right: 5px;
-			justify-content: center;
-			text-align: center;
-			font-size: 15px;
-		}
-		.report-state-item{
-			border: solid 1px white;
-			height: 20px;
-			width: 20px;
-			border-radius: 100px;
-			justify-content: center;
-			text-align: center;
-			font: 15px;
-			display: inline-block;
-		}
-		.report-state-good{
-			color: #1dd1a1;
-			border-color: #1dd1a1;
-		}
-		.report-state-warn{
-			color: #feca57;
-			border-color: #feca57;
-		}
-		.report-state-bad{
-			color: #ff6b6b;
-			border-color: #ff6b6b;
-		}
-		.report-item a{
-			display: block;
-			color: #9ab;
-		}
-		.report-item a:hover{
-			color: #40bcf4;
-			cursor: pointer;
-		}
-		.report-ext-link{
-			display: block;
-			width: 100%;
-			margin-bottom: 5px;
-		}
-	`);
-	/* eslint-enable */
-
+function WikiDataChecker() {
 	const letterboxd = {
-
 		debug: true,
 
 		overview: {
-
-			lastLocation: window.location.pathname,
-
-			running: false,			
-
+			running: false,
 			idsCollected: false,
+			reportShown: false,
 
 			streamingStudios: [ 'Netflix', 'Apple Studios', 'Amazon Studios' ],
 
 			// Letterboxd
-			letterboxdData: { state: 0, id: '', title: '', year: '', streaming: false, silent: false },	
-
-			// OMDB
-			omdbData: {state: 0, data: null},
-
+			letterboxdData: { state: 0, id: '', title: '', year: '', streaming: false, silent: false },
 			// IMDb
-			imdbID: '',
-			imdbData: { state: 0, url: '', data: null, raw: null, isMiniSeries: false, isTVEpisode: false, mpaa: null, meta: null},
-
+			imdbData: { state: 0, url: '', id: '', data: null, raw: null, isMiniSeries: false, isTVEpisode: false, mpaa: null, meta: null},
 			// TMDB
-			tmdbID: '',
-			tmdbTV: false,
-			
+			tmdbData: { id: '' },
 			// WikiData
 			wiki: null,
 			wikiData: { state: 0, data: null,
@@ -151,14 +64,16 @@
 			wikiDataDates: { state: 0, data: null, dates: [], },
 			reportAdded: false,
 
+			reportInfo: { good: 0, warn: 0, bad: 0 },
+
 			isAnime: false,
 			isAsian: false,
-
-			// OMDb
-			omdbData: {state: 0, data: null, metascore: null, tomatoURL: null},
+			isTV: false,
 
 			selectedTab: '',
 			selectedButton: null,
+
+			promises: [],
 
 			stopRunning() {
 				this.running = false;
@@ -175,7 +90,6 @@
 					var letterboxdUrl = window.location.href;
 					if (letterboxdUrl.match(regex)){
 						this.letterboxdData.id = letterboxdUrl.match(regex)[1];
-						this.letterboxdData.state++;
 					}
 				}
 
@@ -183,7 +97,10 @@
 				if (document.querySelector(".releaseyear a") != null && document.querySelector(".headline-1.primaryname span") != null && this.letterboxdData.year == ''){
 					this.letterboxdData.year = document.querySelectorAll(".metablock .releaseyear a")[0].innerText;
 					this.letterboxdData.title = document.querySelector(".headline-1.primaryname span").innerText;
-					this.letterboxdData.state++;
+
+					if (letterboxd.debug){
+						console.log('Letterboxd Title: ' + this.letterboxdData.title + '\nLetterboxd Year: ' + this.letterboxdData.year);
+					}
 				}
 
 				// Check if this is streaming or silent
@@ -214,20 +131,27 @@
 							}
 						}
 					}
-					this.letterboxdData.state++;
+
+					if (letterboxd.debug){
+						console.log('Streaming: ' + this.letterboxdData.streaming + '\nSilent: ' + this.letterboxdData.silent);
+					}
 				}
 
 				// Collect the IMDB and TMDB IDs
-				if (this.imdbID == "" && document.querySelector('.micro-button') != null){
+				if (this.imdbData.id == "" && document.querySelector('.micro-button') != null){
 					// Gets the IMDb link and ID, and also TMDB id
 					this.getIDs();
+
+					if (letterboxd.debug){
+						console.log('IMDb ID: ' + this.imdbData.id + '\nTMDB ID: ' + this.tmdbData.id);
+					}
 				}
 
 				// Call WikiData
 				if (this.idsCollected == true && this.wikiData.state == 0){
 					this.wikiData.state = 1
-					var queryString = 'https://query.wikidata.org/bigdata/namespace/wdq/sparql?format=json&query=' + letterboxd.helpers.getWikiDataQuery(this.imdbID, this.tmdbID, this.letterboxdData.id, this.tmdbTV);
-					letterboxd.helpers.getData(queryString, "GET", null, null).then((value) => {
+					var queryString = 'https://query.wikidata.org/bigdata/namespace/wdq/sparql?format=json&query=' + letterboxd.helpers.getWikiDataQuery(this.imdbData.id, this.tmdbData.id, this.letterboxdData.id, this.isTV);
+					this.promises.push(letterboxd.helpers.getData(queryString, "GET", null, null).then((value) => {
 						value = JSON.parse(value.response);
 						if (value != null && value.results != null && value.results.bindings != null && value.results.bindings.length > 0){
 							this.wikiData.data = value.results.bindings;
@@ -241,9 +165,10 @@
 								this.wikiData.wikipedia = letterboxd.helpers.parseWikiDataResult(data, 'Wikipedia', this.wikiData.wikipedia);
 								this.wikiData.title = letterboxd.helpers.parseWikiDataResult(data, 'Title', this.wikiData.title);
 								this.wikiData.mpaa = letterboxd.helpers.parseWikiDataResult(data, 'MPAA', this.wikiData.mpaa);
-								this.wikiData.genre = letterboxd.helpers.parseWikiDataResult(data, 'Genre', this.wikiData.genres);
+								this.wikiData.genre = letterboxd.helpers.parseWikiDataResult(data, 'Genre', this.wikiData.genre);
 								this.wikiData.colour = letterboxd.helpers.parseWikiDataResult(data, 'Color', this.wikiData.colour);
 								this.wikiData.duration = letterboxd.helpers.parseWikiDataResult(data, 'Duration', this.wikiData.duration);
+								this.wikiData.language = letterboxd.helpers.parseWikiDataResult(data, 'Language', this.wikiData.language);
 								this.wikiData.aspectRatio = letterboxd.helpers.parseWikiDataResult(data, 'Aspect_Ratio', this.wikiData.aspectRatio);
 								this.wikiData.letterboxdID = letterboxd.helpers.parseWikiDataResult(data, 'Letterboxd_ID', this.wikiData.letterboxdID);
 								this.wikiData.imdbID = letterboxd.helpers.parseWikiDataResult(data, 'IMDB_ID', this.wikiData.imdbID);
@@ -289,15 +214,14 @@
 							}
 						}
 						this.wikiData.state = 2
-						this.checkIfReportShouldBeAdded();
-					});
+					}));
 				}
 
 				// Call WikiData Dates
 				if (this.idsCollected == true && this.wikiDataDates.state == 0){
 					this.wikiDataDates.state = 1;
-					var queryString = 'https://query.wikidata.org/bigdata/namespace/wdq/sparql?format=json&query=' + letterboxd.helpers.getWikiDataDatesQuery(this.imdbID, this.tmdbID, this.letterboxdData.id, this.tmdbTV);
-					letterboxd.helpers.getData(queryString, "GET", null, null).then((value) => {
+					var queryString = 'https://query.wikidata.org/bigdata/namespace/wdq/sparql?format=json&query=' + letterboxd.helpers.getWikiDataDatesQuery(this.imdbData.id, this.tmdbData.id, this.letterboxdData.id, this.isTV);
+					this.promises.push(letterboxd.helpers.getData(queryString, "GET", null, null).then((value) => {
 						value = JSON.parse(value.response);
 						if (value != null && value.results != null && value.results.bindings != null && value.results.bindings.length > 0){
 							this.wikiDataDates.data = value.results.bindings;
@@ -322,160 +246,37 @@
 								this.wikiDataDates.dates.push(date);
 							}
 						}
-						console.log('5');
 						this.wikiDataDates.state = 2
-						this.checkIfReportShouldBeAdded();
-					});
+					}));
 				}
 
 				// Call IMDB
 				if (this.idsCollected == true && this.imdbData.state == 0){
-					if (this.imdbID != ''){
+					if (this.imdbData.id != ''){
 						this.imdbData.state = 1;
-						letterboxd.helpers.getData(this.imdbData.url, "GET", null, null).then((value) => {
+						this.promises.push(letterboxd.helpers.getData(this.imdbData.url, "GET", null, null).then((value) => {
 							value = letterboxd.helpers.parseHTML(value.response)
 							if (value != null){
 								this.imdbData.data = value;
 								this.getIMDBAdditional();
 							}
 							this.imdbData.state = 2
-							this.checkIfReportShouldBeAdded();
-						});
+						}));
 					}else{
 						// No id, do not attemp the call again
 						this.imdbData.state = -1;
-						this.checkIfReportShouldBeAdded();
 					}
 				}
 
-				// todo: use promise all?
-				// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all
-
-				this.checkIfReportShouldBeAdded();
-
-
-				/*
-				var canAdd = (document.querySelector('.sidebar'))
-
-				if ((this.imdbID != "" || this.tmdbID != '') && this.wikiData.state < 1 && canAdd && this.letterboxdData.year != null && this.letterboxdData.title != null){
-					// Call WikiData
-					this.wikiData.state = 1;
-
-					var queryString = 'https://query.wikidata.org/bigdata/namespace/wdq/sparql?format=json&query=' + letterboxd.helpers.getWikiDataQuery(this.imdbID, this.tmdbID, this.letterboxdData.id, this.tmdbTV);
-
-					var resp = await letterboxd.helpers.getData(queryString, "GET", null, null);
-					this.wiki = JSON.parse(resp.response);
-
-					if (this.wiki != null && this.wiki.results != null && this.wiki.results.bindings != null && this.wiki.results.bindings.length > 0){
-						// Loop and find the best result
-						if (this.wiki.results.bindings.length > 1){
-							var results = [];
-							for (var i = 0; i < this.wiki.results.bindings.length; i++){
-								var result = this.wiki.results.bindings[i];
-								var entry = {id: i, score: 0};
-
-								if (result.TV_Start != null && result.TV_Start_Precision.value != "9"){
-									entry.score++;
-								}
-								if (result.TV_End != null && result.TV_End_Precision.value != "9"){
-									entry.score++;
-								}
-								if (result.Publication_Date != null && result.Publication_Date_Precision.value != "9"){
-									entry.score++;
-								}
-								if (result.Publication_Date_Origin != null && result.Publication_Date_Origin_Precision.value != "9"){
-									entry.score++;
-								}
-								if (result.Publication_Date_Backup != null && result.Publication_Date_Backup_Precision.value != "9"){
-									entry.score++;
-								}
-								results.push(entry);
-
-								if (result.InstanceLabel != null){
-									if (result.InstanceLabel.value.includes("anime") || result.InstanceLabel.value == ("original video animation")){
-										this.isAnime = true;
-									}
-								}
-							}
-							results.sort((a, b) => {
-								return b.score - a.score;
-							});
-							this.wiki = this.wiki.results.bindings[results[0].id];
-						}else{
-							this.wiki = this.wiki.results.bindings[0];
-							
-							if (this.wiki.InstanceLabel != null){
-								if (this.wiki.InstanceLabel.value.includes("anime") || this.wiki.InstanceLabel.value == ("original video animation")){
-									this.isAnime = true;
-								}
-							}
-						}
-						
-						// Call the IMDb main show page
-						var resp = await letterboxd.helpers.getData(this.imdbData.url.replace('/ratings',''), "GET", null, null);
-						this.imdbData.data2 = resp.response;
-
-						if (this.imdbData.data2 != null && this.imdbData.data2 != ""){
-							this.imdbData.data2 = letterboxd.helpers.parseHTML(this.imdbData.data2);
-							
-							if (this.imdbData.data2 != null){	
-								this.getIMDBAdditional();
-							}
-							this.imdbData.state2 = 1;
-						}
-
-						// Now get the OMDb before
-						var omdbString = "https://www.omdbapi.com/?apikey=afd82b43&i=" + this.imdbID + "&plot=short&r=json&tomatoes=true";
-						console.log("WikiData-Checker | Calling: " + omdbString);
-						try{
-							var resp = await letterboxd.helpers.getData(omdbString, "GET", null, null);
-							this.omdbData.data = JSON.parse(resp.response);
-						}catch{
-							this.omdbData.data = null
-						}
-						if (this.omdbData.data != null){
-							if (this.omdbData.data.Metascore != null && this.omdbData.data.Metascore != "N/A")
-								this.omdbData.metascore = this.omdbData.data.Metascore;
-								
-							if (this.omdbData.data.Rated != null && this.omdbData.data.Rated != "N/A")
-								this.omdbData.rated = this.omdbData.data.Rated;
-	
-							if (this.omdbData.data.tomatoURL != null && this.omdbData.data.tomatoURL != "N/A")
-								this.omdbData.tomatoURL = this.omdbData.data.tomatoURL;
-						}
-
-						if (this.wiki.Anidb_ID != null || this.wiki.Anilist_ID != null || this.wiki.MAL_ID != null){
-							this.isAnime = true;
-						}
-
-						this.wikiData.state = 2;
-					}else{
-						this.wiki = null;
-					}
-
+				// Wait until all of the promises are completed
+				Promise.all(this.promises).then(() => {
+					// Add the report
 					this.addWikiDataReport();
-				}
-					*/
+					this.reportAdded = true;
+				});
 
 				// Stop
 				return this.stopRunning();
-			},
-
-			checkIfReportShouldBeAdded(){
-				if (document.querySelector('.sidebar') == null)
-					return;
-				if (this.reportAdded)
-					return;
-				if (this.wikiData.state < 2)
-					return;
-				if (this.wikiDataDates.state < 2)
-					return;
-				if (this.imdbData.state > 0 && this.imdbData.state < 2)
-					return;
-
-				// Add the report
-				this.addWikiDataReport();
-				this.reportAdded = true;
 			},
 
 			getIDs(){
@@ -505,7 +306,7 @@
 
 				// Separate out the ID
 				if (imdbLink != ""){
-					this.imdbID = imdbLink.match(/(imdb.com\/title\/)(tt[0-9]+)(\/)/)[2];
+					this.imdbData.id = imdbLink.match(/(imdb.com\/title\/)(tt[0-9]+)(\/)/)[2];
 				}
 
 				// Separate the TMDB ID
@@ -513,7 +314,7 @@
 					if (tmdbLink.includes('/tv/')){
 						this.tmdbTV = true;
 					}
-					this.tmdbID = tmdbLink.match(/(themoviedb.org\/(?:tv|movie)\/)([0-9]+)($|\/)/)[2];
+					this.tmdbData.id = tmdbLink.match(/(themoviedb.org\/(?:tv|movie)\/)([0-9]+)($|\/)/)[2];
 				}
 
 				this.idsCollected = true;
@@ -539,8 +340,6 @@
 				if (meta != null){
 					this.imdbData.meta = meta.innerText.trim();
 				}
-
-				// We will not add anything yet, we will wait until we are sure WikiData is missing them
 			},
 
 			addWikiDataReport(){
@@ -558,16 +357,35 @@
 					class: 'section-heading'
 				},{});
 				section.append(header);
-				const a = letterboxd.helpers.createElement('a', {},{});
-				header.append(a);
-				a.innerText = 'WikiData Report'
+				const headerText = letterboxd.helpers.createElement('p', { class: 'report-headertext' },{});
+				header.append(headerText);
+				headerText.innerText = 'WikiData Report'
+
+				// Add Show/Hide button
+				const alllinkDiv = letterboxd.helpers.createElement('div', {
+					class: 'all-link more-link'
+				},{});
+				section.append(alllinkDiv);
+				
+				const showButton = letterboxd.helpers.createElement('a', {
+					class: 'report-toggle',
+					href: window.location.pathname
+				},{});
+				showButton.innerText = 'Show';
+				alllinkDiv.append(showButton);
+				// Prevent the page load
+				showButton.onclick = function() {
+					return false;
+				}
 
 				// Create Tab Section
 				//*********************************************
 				const tabSection = letterboxd.helpers.createElement('section', {
 					id: 'tabbed-content',
 					class: 'film-recent-reviews -clear'
-				},{});
+				},{
+					display: 'none'
+				});
 				tabSection.style['margin-top'] = '0px';
 				section.append(tabSection);
 
@@ -604,7 +422,7 @@
 
 					// Create the Box Office Tab
 					//********************************************
-					if (this.tmdbTV == false){
+					if (this.isTV == false){
 						headerUl.append(letterboxd.helpers.createTabHeader('Box Office', 'wikidata-tab-boxoffice'));
 						const boxoffice = letterboxd.helpers.createElement('div', { class: 'wikidata-tab wikidata-tab-boxoffice' },{ display: 'none' });
 						tabSection.append(boxoffice);
@@ -619,6 +437,16 @@
 				tabSection.append(links);
 				this.createLinksTab(links);
 
+
+				// Adjust header based on the results
+				//*********************************************
+				const headerSubtext = letterboxd.helpers.createElement('p', { class: 'report-subheader' },{});
+				header.append(headerSubtext);
+				if (this.wikiData.data == null){
+					headerSubtext.innerText = 'No Item Found';
+				}else{
+					headerSubtext.innerText = this.reportInfo.good + ' good / ' + this.reportInfo.warn + ' warnings / ' + this.reportInfo.bad + ' bad';
+				}
 				
 				// Append to the page
 				//*********************************************
@@ -629,6 +457,10 @@
 				$(".wikidata-report-tab").on('click', function(event){
 					tabClick(event, letterboxd);
 				});
+				$(".report-toggle").on('click', function(event){
+					reportToggle(event, letterboxd);
+				});
+				$(".wikidata-report-tab.all a").click();
 
 				// Add the hover events
 				//*****************************************************************
@@ -641,8 +473,8 @@
 				const ul = letterboxd.helpers.createElement('ul', { class: 'avatar-list' },{ });
 				details.append(ul);
 				
-				var imdbTitleUrl = 'https://www.imdb.com/title/' + this.imdbID + "/releaseinfo/";
-				var imdbTechUrl = 'https://www.imdb.com/title/' + this.imdbID + "/technical/";
+				var imdbTitleUrl = 'https://www.imdb.com/title/' + this.imdbData.id + "/releaseinfo/";
+				var imdbTechUrl = 'https://www.imdb.com/title/' + this.imdbData.id + "/technical/";
 
 				if (this.wikiData.data != null){
 					// Title
@@ -721,10 +553,10 @@
 				
 				// IMDB ID
 				//***********************************************
-				var imdbUrl = 'https://www.imdb.com/title/' + this.imdbID
+				var imdbUrl = 'https://www.imdb.com/title/' + this.imdbData.id
 				if (this.wikiData.imdbID != ''){
 					ul.append(letterboxd.helpers.createReportBox("IMDb ID","No Issues","good",imdbUrl));
-				}else if (this.imdbID == ''){
+				}else if (this.imdbData.id == ''){
 					ul.append(letterboxd.helpers.createReportBox("IMDb ID","Missing IMDb ID, but no ID found on Letterboxd page","good",imdbUrl));
 				}else{
 					ul.append(letterboxd.helpers.createReportBox("IMDb ID","Missing IMDb ID","bad",imdbUrl));
@@ -732,15 +564,15 @@
 				
 				// TMDB ID
 				//***********************************************
-				if (this.tmdbTV == true){
-					var tmdbUrl = 'https://www.themoviedb.org/movie/' + this.tmdbID
+				if (this.isTV == true){
+					var tmdbUrl = 'https://www.themoviedb.org/movie/' + this.tmdbData.id
 					if (this.wikiData.tmdbTVTD != ''){
 						ul.append(letterboxd.helpers.createReportBox("TMDB ID","No Issues","good",tmdbUrl));
 					}else{
 						ul.append(letterboxd.helpers.createReportBox("TMDB ID","Missing TMDB ID","bad",tmdbUrl));
 					}
 				}else{
-					var tmdbUrl = 'https://www.themoviedb.org/tv/' + this.tmdbID
+					var tmdbUrl = 'https://www.themoviedb.org/tv/' + this.tmdbData.id
 					if (this.wikiData.tmdbID != ''){
 						ul.append(letterboxd.helpers.createReportBox("TMDB ID","No Issues","good",tmdbUrl));
 					}else{
@@ -754,8 +586,6 @@
 				if (this.wikiData.rottenTomatoesID != ''){
 					tomatoSearchURL = "https://www.rottentomatoes.com/" +  this.wikiData.rottenTomatoesID;
 					ul.append(letterboxd.helpers.createReportBox("Tomato","No Issues","good",tomatoSearchURL));
-				}else if(this.omdbData.tomatoURL != null){
-					ul.append(letterboxd.helpers.createReportBox("Tomato","Missing Rotten Tomatoes ID, but found in OMDb","bad",tomatoSearchURL));
 				}else{
 					ul.append(letterboxd.helpers.createReportBox("Tomato","Missing Rotten Tomatoes ID","bad",tomatoSearchURL));
 				}
@@ -763,7 +593,7 @@
 				// Metacritic ID
 				//***********************************************
 				var metaSearchURL = "https://www.metacritic.com/search/" + title;
-				if (this.tmdbTV == true){
+				if (this.isTV == true){
 					metaSearchURL += "/?page=1&category=1";
 				}else{
 					metaSearchURL += "/?page=1&category=2";
@@ -773,8 +603,6 @@
 					ul.append(letterboxd.helpers.createReportBox("Meta","No Issues","good",metaSearchURL));
 				}else if(this.imdbData.meta != null){
 					ul.append(letterboxd.helpers.createReportBox("Meta","Missing Metacritic ID, but found in IMDB","bad",metaSearchURL));
-				}else if(this.omdbData.metascore != null){
-					ul.append(letterboxd.helpers.createReportBox("Meta","Missing Metacritic ID, but found in OMDb","bad",metaSearchURL));
 				}else{
 					ul.append(letterboxd.helpers.createReportBox("Meta","Possibly missing Metacritic ID","warn",metaSearchURL));
 				}
@@ -822,7 +650,7 @@
 				// Allocine.fr
 				//***********************************************
 				var allocineUrl = 'https://www.allocine.fr/rechercher/?q=' + title;
-				if (this.tmdbTV == true){
+				if (this.isTV == true){
 					// TV
 					if (this.wikiData.allocineTVID != ''){
 						allocineUrl = 'https://www.allocine.fr/series/ficheserie_gen_cserie=' + this.wikiData.allocineTVID + '.html';
@@ -843,7 +671,7 @@
 				// Douban
 				//***********************************************
 				var doubanUrl = 'https://search.douban.com/movie/subject_search?search_text=' + title;
-				if (this.tmdbTV == true){
+				if (this.isTV == true){
 				}else{
 					// FILM
 					if (this.wikiData.doubanID != ''){
@@ -906,7 +734,7 @@
 				//***********************************************
 				// TV Dates
 				if (this.wikiData.tvStart != ''){
-					var releaseInfoUrl = 'https://www.imdb.com/title/' + this.imdbID + '/episodeguide';
+					var releaseInfoUrl = 'https://www.imdb.com/title/' + this.imdbData.id + '/episodeguide';
 
 					// Start Date
 					if (this.wikiData.tvStart != ''){
@@ -923,7 +751,7 @@
 					}
 
 				}else{
-					var releaseInfoUrl = 'https://www.imdb.com/title/' + this.imdbID + '/releaseinfo';
+					var releaseInfoUrl = 'https://www.imdb.com/title/' + this.imdbData.id + '/releaseinfo';
 
 					// Add a date for each country of origin
 					for (var i = 0; i < this.wikiData.countries.length; i++){
@@ -975,14 +803,14 @@
 				boxoffice.append(ul);
 
 				// BoxOfficeMojo and The Numbers URLs
-				var mojoURL = "https://www.boxofficemojo.com/title/" + this.imdbID;
+				var mojoURL = "https://www.boxofficemojo.com/title/" + this.imdbData.id;
 				// Budget
 				//***********************************************
 				if (this.wikiData.budget != ''){
 					ul.append(letterboxd.helpers.createReportBox("Budget","No Issues","good",mojoURL));
 				}else if (this.letterboxdData.streaming){
 					ul.append(letterboxd.helpers.createReportBox("Budget","Missing budget, but likely streaming movie","warn",mojoURL));
-				}else if (this.imdbID == ''){
+				}else if (this.imdbData.id == ''){
 					ul.append(letterboxd.helpers.createReportBox("Budget","Missing budget, but likely indie movie","warn",mojoURL));
 				}else{
 					ul.append(letterboxd.helpers.createReportBox("Budget","Missing budget","bad",mojoURL));
@@ -994,7 +822,7 @@
 					ul.append(letterboxd.helpers.createReportBox("Box Office US","No Issues","good",mojoURL));
 				}else if (this.letterboxdData.streaming){
 					ul.append(letterboxd.helpers.createReportBox("Box Office US","Missing US box office, but likely streaming movie","warn",mojoURL));
-				}else if (this.imdbID == ''){
+				}else if (this.imdbData.id == ''){
 					ul.append(letterboxd.helpers.createReportBox("Box Office US","Missing US box office, but likely indie movie","warn",mojoURL));
 				}else{
 					ul.append(letterboxd.helpers.createReportBox("Box Office US","Missing US box office","bad",mojoURL));
@@ -1006,7 +834,7 @@
 					ul.append(letterboxd.helpers.createReportBox("Box Office WW","No Issues","good",mojoURL));
 				}else if (this.letterboxdData.streaming){
 					ul.append(letterboxd.helpers.createReportBox("Box Office WW","Missing worldwide box office, but likely streaming movie","warn",mojoURL));
-				}else if (this.imdbID == ''){
+				}else if (this.imdbData.id == ''){
 					ul.append(letterboxd.helpers.createReportBox("Box Office WW","Missing worldwide box office, but likely indie movie","warn",mojoURL));
 				}else{
 					ul.append(letterboxd.helpers.createReportBox("Box Office WW","Missing worldwide box office","bad",mojoURL));
@@ -1017,6 +845,8 @@
 				const ul = letterboxd.helpers.createElement('ul', { class: 'avatar-list' },{ ['margin-bottom']: '15px' });
 				links.append(ul);
 
+				// TODO should just make these the same as the micro buttons
+
 				if (this.wikiData.data != null){
 					ul.append(letterboxd.helpers.createLink('WikiData', this.wikiData.item));
 					if (this.wikiData.wikipedia != '')
@@ -1025,12 +855,12 @@
 				else{
 					ul.append(letterboxd.helpers.createLink('WikiData New Item', 'https://www.wikidata.org/wiki/Special:NewItem'));
 				}
-				ul.append(letterboxd.helpers.createLink('IMDB Release Info', 'https://www.imdb.com/title/' + this.imdbID + '/releaseinfo'));
-				ul.append(letterboxd.helpers.createLink('IMDB Parental Guide', 'https://www.imdb.com/title/' + this.imdbID + '/parentalguide'));
-				if (this.tmdbTV){
-					ul.append(letterboxd.helpers.createLink('IMDB Episode Guide', 'https://www.imdb.com/title/' + this.imdbID + '/episodeguide'));
+				ul.append(letterboxd.helpers.createLink('IMDB Release Info', 'https://www.imdb.com/title/' + this.imdbData.id + '/releaseinfo'));
+				ul.append(letterboxd.helpers.createLink('IMDB Parental Guide', 'https://www.imdb.com/title/' + this.imdbData.id + '/parentalguide'));
+				if (this.isTV){
+					ul.append(letterboxd.helpers.createLink('IMDB Episode Guide', 'https://www.imdb.com/title/' + this.imdbData.id + '/episodeguide'));
 				}
-				ul.append(letterboxd.helpers.createLink('BoxOfficeMojo', 'https://www.boxofficemojo.com/title/' + this.imdbID));
+				ul.append(letterboxd.helpers.createLink('BoxOfficeMojo', 'https://www.boxofficemojo.com/title/' + this.imdbData.id));
 				ul.append(letterboxd.helpers.createLink('The Numbers', 'https://www.the-numbers.com/custom-search?searchterm=' + this.letterboxdData.title.replace(/ /,'+')));
 			}
 		},
@@ -1107,12 +937,16 @@
 				li.append(titletext);
 
 				// State
-				if (state == "good")
+				if (state == "good") {
 					var stateText = "✓";
-				else if (state == "warn")
+					letterboxd.overview.reportInfo.good++;
+				} else if (state == "warn") {
 					var stateText = "!";
-				else
+					letterboxd.overview.reportInfo.warn++;
+				} else {
 					var stateText = "X";
+					letterboxd.overview.reportInfo.bad++;
+				}
 				const stateIcon = letterboxd.helpers.createElement('span', {
 					class: 'report-state-item report-state-' + state,
 					['data-original-title']: value
@@ -1126,7 +960,7 @@
 
 			createTabHeader(title, target){
 				const li = letterboxd.helpers.createElement('li', {
-					class: 'wikidata-report-tab',
+					class: 'wikidata-report-tab ' + title.toLowerCase(),
 					target: target
 				},{});
 
@@ -1427,17 +1261,9 @@
 		}
 	};
 
-	const observer = new MutationObserver(() => {
-
-		if (window.location.hostname === 'letterboxd.com') {
-			if (window.location.pathname.startsWith('/film/') && !window.location.pathname.includes("ratings")) {
-				letterboxd.overview.init();
-			}
-		}
-	});
-
-	observer.observe(document, { childList: true, subtree: true });
-})();
+	// Run
+	letterboxd.overview.init();
+};
 
 function ShowTwipsy(event){
 	//if (document.querySelector('.twipsy.fade.above.in')){
@@ -1503,7 +1329,7 @@ function tabClick(event, letterboxd){
 		var currentTabs = document.querySelectorAll(currentTabsTarget);
 		setTabs(currentTabs, 'none');
 
-		letterboxd.overview.selectedButton.className = '';
+		letterboxd.overview.selectedButton.className = letterboxd.overview.selectedButton.className.replace(' selected', '');
 	}
 
 	// The parent li to the a
@@ -1523,7 +1349,7 @@ function tabClick(event, letterboxd){
 	var targetTabs = document.querySelectorAll('.' + target);
 	setTabs(targetTabs, 'block');
 
-	li.className = 'selected';
+	li.className += ' selected';
 
 	// Save the selected tab and button for later
 	letterboxd.overview.selectedTab = target;
@@ -1537,4 +1363,21 @@ function setTabs(targetTabs, display){
 		var targetTab = targetTabs[i];
 		targetTab.style.display = display;
 	}
+}
+
+// Show or Hide the report
+function reportToggle(event, letterboxd){
+	const report = document.querySelector('.wikidata-report #tabbed-content');
+
+	if (letterboxd.overview.reportShown){
+		// Report is visible, hide it
+		event.target.innerText = 'Show';
+		report.style.display = 'none';
+	}else{
+		// Report is NOT visible, show it
+		event.target.innerText = 'Hide';
+		report.style.display = 'block';
+	}
+
+	letterboxd.overview.reportShown = !letterboxd.overview.reportShown;
 }

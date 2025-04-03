@@ -12,7 +12,8 @@
 	"permissions": [
 		"https://letterboxd.com/*",
 		"https://www.imdb.com/*",
-		"https://query.wikidata.org/*"
+		"https://query.wikidata.org/*",
+		"storage"
 	],
 
 	"content_scripts": [

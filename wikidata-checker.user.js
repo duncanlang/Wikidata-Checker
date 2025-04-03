@@ -6,7 +6,7 @@ if (window.location.hostname === 'letterboxd.com') {
 	}
 }
 
-function WikiDataChecker() {
+async function WikiDataChecker() {
 	const letterboxd = {
 		debug: true,
 
@@ -433,7 +433,7 @@ function WikiDataChecker() {
 				// Create the Links Tab
 				//********************************************
 				headerUl.append(letterboxd.helpers.createTabHeader('Links', 'wikidata-tab-links'));
-				const links = letterboxd.helpers.createElement('div', { class: 'wikidata-tab-links' },{ display: 'none' });
+				const links = letterboxd.helpers.createElement('div', { class: 'wikidata-tab wikidata-tab-links' },{ display: 'none' });
 				tabSection.append(links);
 				this.createLinksTab(links);
 
@@ -460,7 +460,14 @@ function WikiDataChecker() {
 				$(".report-toggle").on('click', function(event){
 					reportToggle(event, letterboxd);
 				});
+
+				// Show the 'All' tab
 				$(".wikidata-report-tab.all a").click();
+
+				// Remember last toggle
+				if (letterboxd.storage.getLocal('report-show') === true ){
+					$(".report-toggle").click();
+				}
 
 				// Add the hover events
 				//*****************************************************************
@@ -482,6 +489,13 @@ function WikiDataChecker() {
 						ul.append(letterboxd.helpers.createReportBox("Title","No Issues","good",imdbTitleUrl));
 					}else{
 						ul.append(letterboxd.helpers.createReportBox("Title","Missing title","bad",imdbTitleUrl));
+					}
+
+					// MPAA
+					if (this.wikiData.mpaa != ''){
+						ul.append(letterboxd.helpers.createReportBox("MPAA","No Issues","good",imdbTechUrl));
+					}else{
+						ul.append(letterboxd.helpers.createReportBox("MPAA","Missing MPAA rating","bad",imdbTitleUrl));
 					}
 					
 					// Genre
@@ -585,9 +599,9 @@ function WikiDataChecker() {
 				var tomatoSearchURL = "https://www.rottentomatoes.com/search?search=" + title;
 				if (this.wikiData.rottenTomatoesID != ''){
 					tomatoSearchURL = "https://www.rottentomatoes.com/" +  this.wikiData.rottenTomatoesID;
-					ul.append(letterboxd.helpers.createReportBox("Tomato","No Issues","good",tomatoSearchURL));
+					ul.append(letterboxd.helpers.createReportBox("RottenTomatoes","No Issues","good",tomatoSearchURL));
 				}else{
-					ul.append(letterboxd.helpers.createReportBox("Tomato","Missing Rotten Tomatoes ID","bad",tomatoSearchURL));
+					ul.append(letterboxd.helpers.createReportBox("RottenTomatoes","Missing Rotten Tomatoes ID","bad",tomatoSearchURL));
 				}
 
 				// Metacritic ID
@@ -600,11 +614,11 @@ function WikiDataChecker() {
 				}
 				if (this.wikiData.metacriticID != ''){
 					metaSearchURL = "https://www.metacritic.com/" +  this.wikiData.metacriticID;
-					ul.append(letterboxd.helpers.createReportBox("Meta","No Issues","good",metaSearchURL));
+					ul.append(letterboxd.helpers.createReportBox("Metacritic","No Issues","good",metaSearchURL));
 				}else if(this.imdbData.meta != null){
-					ul.append(letterboxd.helpers.createReportBox("Meta","Missing Metacritic ID, but found in IMDB","bad",metaSearchURL));
+					ul.append(letterboxd.helpers.createReportBox("Metacritic","Missing Metacritic ID, but found in IMDB","bad",metaSearchURL));
 				}else{
-					ul.append(letterboxd.helpers.createReportBox("Meta","Possibly missing Metacritic ID","warn",metaSearchURL));
+					ul.append(letterboxd.helpers.createReportBox("Metacritic","Possibly missing Metacritic ID","warn",metaSearchURL));
 				}
 
 				// MUBI ID
@@ -845,8 +859,6 @@ function WikiDataChecker() {
 				const ul = letterboxd.helpers.createElement('ul', { class: 'avatar-list' },{ ['margin-bottom']: '15px' });
 				links.append(ul);
 
-				// TODO should just make these the same as the micro buttons
-
 				if (this.wikiData.data != null){
 					ul.append(letterboxd.helpers.createLink('WikiData', this.wikiData.item));
 					if (this.wikiData.wikipedia != '')
@@ -857,11 +869,13 @@ function WikiDataChecker() {
 				}
 				ul.append(letterboxd.helpers.createLink('IMDB Release Info', 'https://www.imdb.com/title/' + this.imdbData.id + '/releaseinfo'));
 				ul.append(letterboxd.helpers.createLink('IMDB Parental Guide', 'https://www.imdb.com/title/' + this.imdbData.id + '/parentalguide'));
+				ul.append(letterboxd.helpers.createLink('IMDB Technical', 'https://www.imdb.com/title/' + this.imdbData.id + '/technical'));
 				if (this.isTV){
 					ul.append(letterboxd.helpers.createLink('IMDB Episode Guide', 'https://www.imdb.com/title/' + this.imdbData.id + '/episodeguide'));
 				}
 				ul.append(letterboxd.helpers.createLink('BoxOfficeMojo', 'https://www.boxofficemojo.com/title/' + this.imdbData.id));
 				ul.append(letterboxd.helpers.createLink('The Numbers', 'https://www.the-numbers.com/custom-search?searchterm=' + this.letterboxdData.title.replace(/ /,'+')));
+				ul.append(letterboxd.helpers.createLink('MPAA Search', 'https://www.filmratings.com/Search?filmTitle=' + this.letterboxdData.title.replace(/ /,'+')));
 			}
 		},
 
@@ -980,10 +994,13 @@ function WikiDataChecker() {
 
 			createLink(title, url){
 				const a = letterboxd.helpers.createElement('a', {
-					class: 'report-ext-link',
+					class: 'micro-button track-event',
 					href: url,
 					target: '_blank'
-				},{});
+				},{
+					['margin-right']: '3px',
+					['margin-bottom']: '3px'
+				});
 				a.innerText = title;
 				
 				return a;
@@ -1219,47 +1236,50 @@ function WikiDataChecker() {
 				"}";
 
 				return sparqlQuery;
-			},
-			
-			getWikiDataCountryQuery(imdbId, tmdbId, letterboxdId, isTV){
-				// Add the IDs to the query
-				var sparqlQuery = '  VALUES ?letterboxdID { "' + letterboxdId + '"}\n';
-				if (imdbId != "")
-					sparqlQuery += '  VALUES ?imdbID { "' + imdbId + '"}\n';
-				if (tmdbId != "")
-					sparqlQuery += '  VALUES ?tmdbID { "' + tmdbId + '"}\n';
-
-				sparqlQuery += '\n';
-
-				// Add the initial Letterboxd ID filter
-				sparqlQuery += '  { ?item p:P6127 ?letterboxdStatement. ?letterboxdStatement ps:P6127 ?letterboxdID. MINUS { ?letterboxdStatement wikibase:rank wikibase:DeprecatedRank. } }\n'
-
-				// Add the IMDB if the ID is found
-				if (imdbId != "")
-					sparqlQuery += '  UNION { ?item p:P345 ?imdbStatement. ?imdbStatement ps:P345 ?imdbID. MINUS { ?imdbStatement wikibase:rank wikibase:DeprecatedRank. } }\n'
-
-				// Add the TMDB TV if the ID is found and this is a TV show
-				if (tmdbId != "" && isTV)
-					sparqlQuery += '  UNION { ?item p:P4983 ?tmdbStatement. ?tmdbStatement ps:P4983 ?tmdbID. MINUS { ?tmdbStatement wikibase:rank wikibase:DeprecatedRank. } }\n'
-				
-				// Add the TMDB ID if found and NOT a TV show
-				if (tmdbId != "" && isTV == false)
-					sparqlQuery += '  UNION { ?item p:P4947 ?tmdbStatement. ?tmdbStatement ps:P4947 ?tmdbID. MINUS { ?tmdbStatement wikibase:rank wikibase:DeprecatedRank. } }\n'
-
-				
-				// Now the full query
-				sparqlQuery = "SELECT DISTINCT ?item ?Country_Of_Origin ?Country_Of_OriginLabel WHERE {\n" +
-				"  SERVICE wikibase:label { bd:serviceParam wikibase:language \"[AUTO_LANGUAGE],en\". }\n" +
-				"\n" +
-				sparqlQuery +
-				"\n" +
-				"  ?item wdt:P495 ?Country_Of_Origin.\n" +
-				"}";
-
-				return sparqlQuery;
 			}
+		},
+		
+		storage: {
+			dataLocal: {},
+			dataSync: {},
+			initialized: false,
+
+			async init() {
+				this.dataLocal = await browser.storage.local.get().then(function (storedSettings) {
+					return storedSettings;
+				});
+				
+				/*
+				this.dataSync = await browser.storage.sync.get().then(function (storedSettings) {
+					return storedSettings;
+				});
+				*/
+
+				this.initialized = true;
+			},
+
+			getLocal(key) {
+				return this.dataLocal[key];
+			},
+
+			setLocal(key, value) {
+				this.dataLocal[key] = value;
+				browser.storage.local.set(this.dataLocal);
+			}/*,
+
+			getSync(key) {
+				return this.dataSync[key];
+			},
+
+			setSync(key, value) {
+				this.dataSync[key] = value;
+				browser.storage.local.set(this.dataSync);
+			}*/
 		}
 	};
+
+	// Init Settings
+	await letterboxd.storage.init();
 
 	// Run
 	letterboxd.overview.init();
@@ -1380,4 +1400,7 @@ function reportToggle(event, letterboxd){
 	}
 
 	letterboxd.overview.reportShown = !letterboxd.overview.reportShown;
+	
+	// Update storage
+	letterboxd.storage.setLocal('report-show', letterboxd.overview.reportShown);
 }

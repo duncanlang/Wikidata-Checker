@@ -8,7 +8,7 @@ if (window.location.hostname === 'letterboxd.com') {
 
 async function WikiDataChecker() {
 	const letterboxd = {
-		debug: true,
+		debug: false,
 
 		overview: {
 			running: false,

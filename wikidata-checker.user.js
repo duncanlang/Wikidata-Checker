@@ -1,7 +1,7 @@
 // setTimeout(function(){ debugger; }, 5000);  - used to freeze the inspector
 
 if (window.location.hostname === 'letterboxd.com') {
-	if (window.location.pathname.startsWith('/film/') && !window.location.pathname.includes("ratings")) {
+	if (window.location.pathname.startsWith('/film/') && !window.location.pathname.includes("ratings") && !window.location.pathname.includes("reviews")) {
 		WikiDataChecker();
 	}
 }
@@ -312,7 +312,7 @@ async function WikiDataChecker() {
 				// Separate the TMDB ID
 				if (tmdbLink != ""){
 					if (tmdbLink.includes('/tv/')){
-						this.tmdbTV = true;
+						this.isTV = true;
 					}
 					this.tmdbData.id = tmdbLink.match(/(themoviedb.org\/(?:tv|movie)\/)([0-9]+)($|\/)/)[2];
 				}
@@ -492,10 +492,12 @@ async function WikiDataChecker() {
 					}
 
 					// MPAA
-					if (this.wikiData.mpaa != ''){
-						ul.append(letterboxd.helpers.createReportBox("MPAA","No Issues","good",imdbTechUrl));
-					}else{
-						ul.append(letterboxd.helpers.createReportBox("MPAA","Missing MPAA rating","bad",imdbTitleUrl));
+					if (this.isTV == false){
+						if (this.wikiData.mpaa != ''){
+							ul.append(letterboxd.helpers.createReportBox("MPAA","No Issues","good",imdbTechUrl));
+						}else{
+							ul.append(letterboxd.helpers.createReportBox("MPAA","Missing MPAA rating","bad",imdbTitleUrl));
+						}
 					}
 					
 					// Genre
@@ -581,16 +583,16 @@ async function WikiDataChecker() {
 				if (this.isTV == true){
 					var tmdbUrl = 'https://www.themoviedb.org/movie/' + this.tmdbData.id
 					if (this.wikiData.tmdbTVTD != ''){
-						ul.append(letterboxd.helpers.createReportBox("TMDB ID","No Issues","good",tmdbUrl));
+						ul.append(letterboxd.helpers.createReportBox("TMDB TV ID","No Issues","good",tmdbUrl));
 					}else{
-						ul.append(letterboxd.helpers.createReportBox("TMDB ID","Missing TMDB ID","bad",tmdbUrl));
+						ul.append(letterboxd.helpers.createReportBox("TMDB TV ID","Missing TMDB TV ID","bad",tmdbUrl));
 					}
 				}else{
 					var tmdbUrl = 'https://www.themoviedb.org/tv/' + this.tmdbData.id
 					if (this.wikiData.tmdbID != ''){
-						ul.append(letterboxd.helpers.createReportBox("TMDB ID","No Issues","good",tmdbUrl));
+						ul.append(letterboxd.helpers.createReportBox("TMDB Movie ID","No Issues","good",tmdbUrl));
 					}else{
-						ul.append(letterboxd.helpers.createReportBox("TMDB ID","Missing TMDB ID","bad",tmdbUrl));
+						ul.append(letterboxd.helpers.createReportBox("TMDB Movie ID","Missing TMDB Movie ID","bad",tmdbUrl));
 					}
 				}
 
@@ -676,9 +678,9 @@ async function WikiDataChecker() {
 					// FILM
 					if (this.wikiData.allocineID != ''){
 						allocineUrl = 'https://www.allocine.fr/film/fichefilm_gen_cfilm=' + this.wikiData.allocineID + '.html';
-						ul.append(letterboxd.helpers.createReportBox("Allocine ID","No Issues","good",allocineUrl));
+						ul.append(letterboxd.helpers.createReportBox("Allocine Film ID","No Issues","good",allocineUrl));
 					}else{
-						ul.append(letterboxd.helpers.createReportBox("Allocine ID","Missing Allocine Film ID","bad",allocineUrl));
+						ul.append(letterboxd.helpers.createReportBox("Allocine Film ID","Missing Allocine Film ID","bad",allocineUrl));
 					}
 				}
 

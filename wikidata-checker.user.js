@@ -288,29 +288,27 @@ async function WikiDataChecker() {
 
 				// Loop and find IMDB
 				for(var i = 0; i < links.length; i++){
-					if (links[i].innerHTML === "IMDb"){
+					if (links[i].innerHTML === 'IMDb'){
 						// Grab the imdb page
 						imdbLink = links[i].href;
-						if (!imdbLink.includes("https") && imdbLink.includes('http'))
-							imdbLink = imdbLink.replace("http","https");
-						if (imdbLink.includes("maindetails"))
-							imdbLink = imdbLink.replace("maindetails","ratings");
+						if (!imdbLink.includes('https') && imdbLink.includes('http'))
+							imdbLink = imdbLink.replace('http','https');
 
 						this.imdbData.url = imdbLink;
 
-					}else if (links[i].innerHTML === "TMDB"){
+					}else if (links[i].innerHTML === 'TMDB'){
 						// Grab the tmdb link
 						tmdbLink = links[i].href;
 					}
 				}
 
 				// Separate out the ID
-				if (imdbLink != ""){
+				if (imdbLink != ''){
 					this.imdbData.id = imdbLink.match(/(imdb.com\/title\/)(tt[0-9]+)(\/)/)[2];
 				}
 
 				// Separate the TMDB ID
-				if (tmdbLink != ""){
+				if (tmdbLink != ''){
 					if (tmdbLink.includes('/tv/')){
 						this.isTV = true;
 					}
@@ -480,8 +478,14 @@ async function WikiDataChecker() {
 				const ul = letterboxd.helpers.createElement('ul', { class: 'avatar-list' },{ });
 				details.append(ul);
 				
-				var imdbTitleUrl = 'https://www.imdb.com/title/' + this.imdbData.id + "/releaseinfo/";
-				var imdbTechUrl = 'https://www.imdb.com/title/' + this.imdbData.id + "/technical/";
+				var imdbTitleUrl = '';
+				var imdbTechUrl = '';
+				var imdbParentalUrl = '';
+				if (this.imdbData.id != ''){
+					imdbTitleUrl = 'https://www.imdb.com/title/' + this.imdbData.id + "/releaseinfo/";
+					imdbTechUrl = 'https://www.imdb.com/title/' + this.imdbData.id + "/technical/";
+					imdbParentalUrl = 'https://www.imdb.com/title/' + this.imdbData.id + "/parentalguide/";
+				}
 
 				if (this.wikiData.data != null){
 					// Title
@@ -494,9 +498,9 @@ async function WikiDataChecker() {
 					// MPAA
 					if (this.isTV == false){
 						if (this.wikiData.mpaa != ''){
-							ul.append(letterboxd.helpers.createReportBox("MPAA","No Issues","good",imdbTechUrl));
+							ul.append(letterboxd.helpers.createReportBox("MPAA","No Issues","good",imdbParentalUrl));
 						}else{
-							ul.append(letterboxd.helpers.createReportBox("MPAA","Missing MPAA rating","bad",imdbTitleUrl));
+							ul.append(letterboxd.helpers.createReportBox("MPAA","Missing MPAA rating","bad",imdbParentalUrl));
 						}
 					}
 					

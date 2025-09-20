@@ -30,7 +30,13 @@
 	],
 	"browser_specific_settings": {
 		"gecko": {
-			"update_url": "https://duncanlang.github.io/updates.json"
+			"id": "{b3c6a56a-76e1-401f-a680-1a4d5d05819d}",
+			"update_url": "https://duncanlang.github.io/updates.json",
+			"data_collection_permissions": {
+				"required": [
+					"none"
+				]
+			}
 		}
 	}
 }

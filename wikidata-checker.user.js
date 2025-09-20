@@ -971,9 +971,9 @@ async function WikiDataChecker() {
 
 				// MPAA
 				if (this.wikiData.mpaa != ''){
-					ul.append(letterboxd.helpers.createReportBox("MPAA","No Issues","good",imdbParentalUrl));
+					ul.append(letterboxd.helpers.createReportBox("MPA","No Issues","good",imdbParentalUrl));
 				}else{
-					ul.append(letterboxd.helpers.createReportBox("MPAA","Missing MPAA rating","bad",imdbParentalUrl));
+					ul.append(letterboxd.helpers.createReportBox("MPA","Missing MPAA rating","bad",imdbParentalUrl));
 				}
 
 				// BBFC

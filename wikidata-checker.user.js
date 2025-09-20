@@ -14,11 +14,12 @@ async function WikiDataChecker() {
 			running: false,
 			idsCollected: false,
 			reportShown: false,
+			titleError: false,
 
 			streamingStudios: [ 'Netflix', 'Apple Studios', 'Amazon Studios' ],
 
 			// Letterboxd
-			letterboxdData: { state: 0, id: '', title: '', year: '', streaming: false, silent: false },
+			letterboxdData: { state: 0, id: '', title: '', nativeTitle: '', year: '', streaming: false, silent: false },
 			// IMDb
 			imdbData: { state: 0, url: '', id: '', data: null, raw: null, isMiniSeries: false, isTVEpisode: false, mpaa: null, meta: null},
 			// TMDB
@@ -29,7 +30,6 @@ async function WikiDataChecker() {
 				item: '',
 				wikipedia: '',
 				title: '',
-				mpaa: '',
 				genre: '',
 				colour: '',
 				duration: '',
@@ -38,7 +38,9 @@ async function WikiDataChecker() {
 				letterboxdID: '',
 				imdbID: '',
 				tmdbID: '',
-				tmdbTVTD: '',
+				tmdbTVID: '',
+				tvdbID: '',
+				tvdbTVID: '',
 				rottenTomatoesID: '',
 				metacriticID: '',
 				mubiID: '',
@@ -59,7 +61,27 @@ async function WikiDataChecker() {
 				countries: [],
 				instanceOf: [],
 				tvStart: '',
-				tvEnd: ''
+				tvEnd: '',
+				mpaa: '',
+				bbfc: '',
+				fsk: '',
+				nmhh: '',
+				cnc: '',
+				filmiroda: '',
+				eirin: '',
+				incaa: '',
+				jmk: '',
+				kmrb: '',
+				rtc: '',
+				fpb: '',
+				igac: '',
+				kavi: '',
+				imda: '',
+				chvrs: '',
+				rcq: '',
+				kfcb: '',
+				acb: '',
+				classind: ''
 			},
 			wikiDataDates: { state: 0, data: null, dates: [], },
 			reportAdded: false,
@@ -94,12 +116,20 @@ async function WikiDataChecker() {
 				}
 
 				// Collect the Letterboxd Title and Year
-				if (document.querySelector(".releaseyear a") != null && document.querySelector(".headline-1.primaryname span") != null && this.letterboxdData.year == ''){
-					this.letterboxdData.year = document.querySelectorAll(".metablock .releaseyear a")[0].innerText;
-					this.letterboxdData.title = document.querySelector(".headline-1.primaryname span").innerText;
+				if (document.querySelector("section.production-masthead") != null && this.letterboxdData.year == null && this.titleError == false) {
+					try {
+						// Collect Year and Title
+						this.letterboxdData.year = document.querySelector(".releasedate a").innerText;
+						this.letterboxdData.title = document.querySelector(".headline-1.primaryname span").innerText;
 
-					if (letterboxd.debug){
-						console.log('Letterboxd Title: ' + this.letterboxdData.title + '\nLetterboxd Year: ' + this.letterboxdData.year);
+						// Collect native title
+						var nativeTitle = document.querySelector('.originalname .quoted-creative-work-title')
+						if (nativeTitle != null) {
+							this.letterboxdData.nativeTitle = nativeTitle.innerText;
+						}
+					} catch (error) {
+						this.titleError = true;
+						console.error('WikiData Checker | Error! There was an error when collecting the title and year!\nException:\n' + error);
 					}
 				}
 
@@ -164,7 +194,6 @@ async function WikiDataChecker() {
 								this.wikiData.item = letterboxd.helpers.parseWikiDataResult(data, 'item', this.wikiData.item);
 								this.wikiData.wikipedia = letterboxd.helpers.parseWikiDataResult(data, 'Wikipedia', this.wikiData.wikipedia);
 								this.wikiData.title = letterboxd.helpers.parseWikiDataResult(data, 'Title', this.wikiData.title);
-								this.wikiData.mpaa = letterboxd.helpers.parseWikiDataResult(data, 'MPAA', this.wikiData.mpaa);
 								this.wikiData.genre = letterboxd.helpers.parseWikiDataResult(data, 'Genre', this.wikiData.genre);
 								this.wikiData.colour = letterboxd.helpers.parseWikiDataResult(data, 'Color', this.wikiData.colour);
 								this.wikiData.duration = letterboxd.helpers.parseWikiDataResult(data, 'Duration', this.wikiData.duration);
@@ -173,7 +202,9 @@ async function WikiDataChecker() {
 								this.wikiData.letterboxdID = letterboxd.helpers.parseWikiDataResult(data, 'Letterboxd_ID', this.wikiData.letterboxdID);
 								this.wikiData.imdbID = letterboxd.helpers.parseWikiDataResult(data, 'IMDB_ID', this.wikiData.imdbID);
 								this.wikiData.tmdbID = letterboxd.helpers.parseWikiDataResult(data, 'TMDB_ID', this.wikiData.tmdbID);
-								this.wikiData.tmdbTVTD = letterboxd.helpers.parseWikiDataResult(data, 'TMDBTV_ID', this.wikiData.tmdbTVTD);
+								this.wikiData.tmdbTVID = letterboxd.helpers.parseWikiDataResult(data, 'TMDBTV_ID', this.wikiData.tmdbTVID);
+								this.wikiData.tvdbID = letterboxd.helpers.parseWikiDataResult(data, 'TVDB_ID', this.wikiData.tvdbID);
+								this.wikiData.tvdbTVID = letterboxd.helpers.parseWikiDataResult(data, 'TVDBTV_ID', this.wikiData.tvdbTVID);
 								this.wikiData.rottenTomatoesID = letterboxd.helpers.parseWikiDataResult(data, 'Rotten_Tomatoes_ID', this.wikiData.rottenTomatoesID);
 								this.wikiData.metacriticID = letterboxd.helpers.parseWikiDataResult(data, 'Metacritic_ID', this.wikiData.metacriticID);
 								this.wikiData.mubiID = letterboxd.helpers.parseWikiDataResult(data, 'Mubi_ID', this.wikiData.mubiID);
@@ -192,6 +223,27 @@ async function WikiDataChecker() {
 								this.wikiData.boxofficeWW = letterboxd.helpers.parseWikiDataResult(data, 'Box_OfficeWW', this.wikiData.boxofficeWW);
 								this.wikiData.tvStart = letterboxd.helpers.parseWikiDataResult(data, 'TV_Start', this.wikiData.tvStart);
 								this.wikiData.tvEnd = letterboxd.helpers.parseWikiDataResult(data, 'TV_End', this.wikiData.tvEnd);
+								
+								this.wikiData.mpaa = letterboxd.helpers.parseWikiDataResult(data, 'MPAA', this.wikiData.mpaa);
+								this.wikiData.bbfc = letterboxd.helpers.parseWikiDataResult(data, 'BBFC', this.wikiData.bbfc);
+								this.wikiData.fsk = letterboxd.helpers.parseWikiDataResult(data, 'FSK', this.wikiData.fsk);
+								this.wikiData.nmhh = letterboxd.helpers.parseWikiDataResult(data, 'NMHH', this.wikiData.nmhh);
+								this.wikiData.cnc = letterboxd.helpers.parseWikiDataResult(data, 'CNC', this.wikiData.cnc);
+								this.wikiData.filmiroda = letterboxd.helpers.parseWikiDataResult(data, 'Filmiroda', this.wikiData.filmiroda);
+								this.wikiData.eirin = letterboxd.helpers.parseWikiDataResult(data, 'EIRIN', this.wikiData.eirin);
+								this.wikiData.incaa = letterboxd.helpers.parseWikiDataResult(data, 'INCAA', this.wikiData.incaa);
+								this.wikiData.jmk = letterboxd.helpers.parseWikiDataResult(data, 'JMK', this.wikiData.jmk);
+								this.wikiData.kmrb = letterboxd.helpers.parseWikiDataResult(data, 'KMRB', this.wikiData.kmrb);
+								this.wikiData.rtc = letterboxd.helpers.parseWikiDataResult(data, 'RTC', this.wikiData.rtc);
+								this.wikiData.fpb = letterboxd.helpers.parseWikiDataResult(data, 'FPB', this.wikiData.fpb);
+								this.wikiData.igac = letterboxd.helpers.parseWikiDataResult(data, 'IGAC', this.wikiData.igac);
+								this.wikiData.kavi = letterboxd.helpers.parseWikiDataResult(data, 'KAVI', this.wikiData.kavi);
+								this.wikiData.imda = letterboxd.helpers.parseWikiDataResult(data, 'IMDA', this.wikiData.imda);
+								this.wikiData.chvrs = letterboxd.helpers.parseWikiDataResult(data, 'CHVRS', this.wikiData.chvrs);
+								this.wikiData.rcq = letterboxd.helpers.parseWikiDataResult(data, 'RCQ', this.wikiData.rcq);
+								this.wikiData.kfcb = letterboxd.helpers.parseWikiDataResult(data, 'KFCB', this.wikiData.kfcb);
+								this.wikiData.acb = letterboxd.helpers.parseWikiDataResult(data, 'ACB', this.wikiData.acb);
+								this.wikiData.classind = letterboxd.helpers.parseWikiDataResult(data, 'ClassInd', this.wikiData.classind);
 								
 								var instanceOf = letterboxd.helpers.parseWikiDataResult(data, 'InstanceLabel', '');
 								if (instanceOf != ''){
@@ -426,6 +478,15 @@ async function WikiDataChecker() {
 						tabSection.append(boxoffice);
 						this.createBoxOfficeTab(boxoffice);
 					}
+
+					// Create the Ratings Tab
+					//********************************************
+					if (this.isTV == false){
+						headerUl.append(letterboxd.helpers.createTabHeader('Ratings', 'wikidata-tab-ratings'));
+						const ratings = letterboxd.helpers.createElement('div', { class: 'wikidata-tab wikidata-tab-ratings' },{ display: 'none' });
+						tabSection.append(ratings);
+						this.createRatingsTab(ratings);
+					}
 				}
 
 				// Create the Links Tab
@@ -493,15 +554,6 @@ async function WikiDataChecker() {
 						ul.append(letterboxd.helpers.createReportBox("Title","No Issues","good",imdbTitleUrl));
 					}else{
 						ul.append(letterboxd.helpers.createReportBox("Title","Missing title","bad",imdbTitleUrl));
-					}
-
-					// MPAA
-					if (this.isTV == false){
-						if (this.wikiData.mpaa != ''){
-							ul.append(letterboxd.helpers.createReportBox("MPAA","No Issues","good",imdbParentalUrl));
-						}else{
-							ul.append(letterboxd.helpers.createReportBox("MPAA","Missing MPAA rating","bad",imdbParentalUrl));
-						}
 					}
 					
 					// Genre
@@ -586,7 +638,7 @@ async function WikiDataChecker() {
 				//***********************************************
 				if (this.isTV == true){
 					var tmdbUrl = 'https://www.themoviedb.org/movie/' + this.tmdbData.id
-					if (this.wikiData.tmdbTVTD != ''){
+					if (this.wikiData.tmdbTVID != ''){
 						ul.append(letterboxd.helpers.createReportBox("TMDB TV ID","No Issues","good",tmdbUrl));
 					}else{
 						ul.append(letterboxd.helpers.createReportBox("TMDB TV ID","Missing TMDB TV ID","bad",tmdbUrl));
@@ -699,6 +751,24 @@ async function WikiDataChecker() {
 						ul.append(letterboxd.helpers.createReportBox("Douban ID","No Issues","good",doubanUrl));
 					}else{
 						ul.append(letterboxd.helpers.createReportBox("Douban ID","Missing Douban ID","bad",doubanUrl));
+					}
+				}
+				
+				// TVDB ID
+				//***********************************************
+				if (this.isTV == true){
+					var tvdbUrl = 'https://thetvdb.com/dereferrer/series/' + this.wikiData.tvdbTVID;
+					if (this.wikiData.tvdbTVID != ''){
+						ul.append(letterboxd.helpers.createReportBox("TVDB TV ID","No Issues","good",tvdbUrl));
+					}else{
+						ul.append(letterboxd.helpers.createReportBox("TVDB TV ID","Missing TMDB TV ID","bad",tvdbUrl));
+					}
+				}else{
+					var tvdbUrl = 'https://thetvdb.com/dereferrer/movie/' + this.wikiData.tvdbID;
+					if (this.wikiData.tvdbID != ''){
+						ul.append(letterboxd.helpers.createReportBox("TVDB Movie ID","No Issues","good",tvdbUrl));
+					}else{
+						ul.append(letterboxd.helpers.createReportBox("TVDB Movie ID","Missing TVDB Movie ID","bad",tvdbUrl));
 					}
 				}
 
@@ -860,6 +930,158 @@ async function WikiDataChecker() {
 					ul.append(letterboxd.helpers.createReportBox("Box Office WW","Missing worldwide box office","bad",mojoURL));
 				}
 			},
+
+			createRatingsTab(ratings){
+				const ul = letterboxd.helpers.createElement('ul', { class: 'avatar-list' },{ });
+				ratings.append(ul);
+
+				var imdbParentalUrl = '';
+				if (this.imdbData.id != ''){
+					imdbParentalUrl = 'https://www.imdb.com/title/' + this.imdbData.id + "/parentalguide/";
+				}
+
+				// MPAA
+				if (this.wikiData.mpaa != ''){
+					ul.append(letterboxd.helpers.createReportBox("MPAA","No Issues","good",imdbParentalUrl));
+				}else{
+					ul.append(letterboxd.helpers.createReportBox("MPAA","Missing MPAA rating","bad",imdbParentalUrl));
+				}
+
+				// BBFC
+				if (this.wikiData.bbfc != ''){
+					ul.append(letterboxd.helpers.createReportBox("BBFC", "No Issues", "good", imdbParentalUrl));
+				}else{
+					ul.append(letterboxd.helpers.createReportBox("BBFC", "Missing BBFC rating", "bad", imdbParentalUrl));
+				}
+
+				// FSK
+				if (this.wikiData.fsk != ''){
+					ul.append(letterboxd.helpers.createReportBox("FSK", "No Issues", "good", imdbParentalUrl));
+				}else{
+					ul.append(letterboxd.helpers.createReportBox("FSK" ,"Missing FSK rating", "bad", imdbParentalUrl));
+				}
+
+				// NMHH
+				if (this.wikiData.nmhh != ''){
+					ul.append(letterboxd.helpers.createReportBox("NMHH", "No Issues", "good", imdbParentalUrl));
+				}else{
+					ul.append(letterboxd.helpers.createReportBox("NMHH", "Missing NMHH rating", "bad", imdbParentalUrl));
+				}
+
+				// CNC
+				if (this.wikiData.cnc != ''){
+					ul.append(letterboxd.helpers.createReportBox("CNC", "No Issues", "good", imdbParentalUrl));
+				}else{
+					ul.append(letterboxd.helpers.createReportBox("CNC" ,"Missing CNC rating", "bad", imdbParentalUrl));
+				}
+
+				// Filmiroda
+				if (this.wikiData.filmiroda != ''){
+					ul.append(letterboxd.helpers.createReportBox("Filmiroda", "No Issues", "good", imdbParentalUrl));
+				}else{
+					ul.append(letterboxd.helpers.createReportBox("Filmiroda","Miss ing Filmiroda rating", "bad", imdbParentalUrl));
+				}
+
+				// EIRIN
+				if (this.wikiData.eirin != ''){
+					ul.append(letterboxd.helpers.createReportBox("EIRIN", "No Issues", "good", imdbParentalUrl));
+				}else{
+					ul.append(letterboxd.helpers.createReportBox("EIRIN"," Missing EIRIN rating", "bad", imdbParentalUrl));
+				}
+
+				// INCAA
+				if (this.wikiData.incaa != ''){
+					ul.append(letterboxd.helpers.createReportBox("INCAA", "No Issues", "good", imdbParentalUrl));
+				}else{
+					ul.append(letterboxd.helpers.createReportBox("INCAA"," Missing INCAA rating", "bad", imdbParentalUrl));
+				}
+
+				// JMK
+				if (this.wikiData.jmk != ''){
+					ul.append(letterboxd.helpers.createReportBox("JMK", "No Issues", "good", imdbParentalUrl));
+				}else{
+					ul.append(letterboxd.helpers.createReportBox("JMK" ,"Missing JMK rating", "bad", imdbParentalUrl));
+				}
+
+				// KMRB
+				if (this.wikiData.kmrb != ''){
+					ul.append(letterboxd.helpers.createReportBox("KMRB", "No Issues", "good", imdbParentalUrl));
+				}else{
+					ul.append(letterboxd.helpers.createReportBox("KMRB", "Missing KMRB rating", "bad", imdbParentalUrl));
+				}
+
+				// RTC
+				if (this.wikiData.rtc != ''){
+					ul.append(letterboxd.helpers.createReportBox("RTC", "No Issues", "good", imdbParentalUrl));
+				}else{
+					ul.append(letterboxd.helpers.createReportBox("RTC" ,"Missing RTC rating", "bad", imdbParentalUrl));
+				}
+
+				// FPB
+				if (this.wikiData.fpb != ''){
+					ul.append(letterboxd.helpers.createReportBox("FPB", "No Issues", "good", imdbParentalUrl));
+				}else{
+					ul.append(letterboxd.helpers.createReportBox("FPB" ,"Missing FPB rating", "bad", imdbParentalUrl));
+				}
+
+				// IGAC
+				if (this.wikiData.igac != ''){
+					ul.append(letterboxd.helpers.createReportBox("IGAC", "No Issues", "good", imdbParentalUrl));
+				}else{
+					ul.append(letterboxd.helpers.createReportBox("IGAC", "Missing IGAC rating", "bad", imdbParentalUrl));
+				}
+
+				// KAVI
+				if (this.wikiData.kavi != ''){
+					ul.append(letterboxd.helpers.createReportBox("KAVI", "No Issues", "good", imdbParentalUrl));
+				}else{
+					ul.append(letterboxd.helpers.createReportBox("KAVI", "Missing KAVI rating", "bad", imdbParentalUrl));
+				}
+
+				// IMDA
+				if (this.wikiData.imda != ''){
+					ul.append(letterboxd.helpers.createReportBox("IMDA", "No Issues", "good", imdbParentalUrl));
+				}else{
+					ul.append(letterboxd.helpers.createReportBox("IMDA", "Missing IMDA rating", "bad", imdbParentalUrl));
+				}
+
+				// CHVRS
+				if (this.wikiData.chvrs != ''){
+					ul.append(letterboxd.helpers.createReportBox("CHVRS", "No Issues", "good", imdbParentalUrl));
+				}else{
+					ul.append(letterboxd.helpers.createReportBox("CHVRS"," Missing CHVRS rating", "bad", imdbParentalUrl));
+				}
+
+				// RCQ
+				if (this.wikiData.rcq != ''){
+					ul.append(letterboxd.helpers.createReportBox("RCQ", "No Issues", "good", imdbParentalUrl));
+				}else{
+					ul.append(letterboxd.helpers.createReportBox("RCQ" ,"Missing RCQ rating", "bad", imdbParentalUrl));
+				}
+
+				// KFCB
+				if (this.wikiData.kfcb != ''){
+					ul.append(letterboxd.helpers.createReportBox("KFCB", "No Issues", "good", imdbParentalUrl));
+				}else{
+					ul.append(letterboxd.helpers.createReportBox("KFCB", "Missing KFCB rating", "bad", imdbParentalUrl));
+				}
+
+				// ACB
+				if (this.wikiData.acb != ''){
+					ul.append(letterboxd.helpers.createReportBox("ACB", "No Issues", "good", imdbParentalUrl));
+				}else{
+					ul.append(letterboxd.helpers.createReportBox("ACB" ,"Missing ACB rating", "bad", imdbParentalUrl));
+				}
+
+				// ClassInd
+				if (this.wikiData.classind != ''){
+					ul.append(letterboxd.helpers.createReportBox("ClassInd", "No Issues", "good", imdbParentalUrl));
+				}else{
+					ul.append(letterboxd.helpers.createReportBox("ClassInd","Mis sing ClassInd rating", "bad", imdbParentalUrl));
+				}
+
+			},
+
 
 			createLinksTab(links){
 				const ul = letterboxd.helpers.createElement('ul', { class: 'avatar-list' },{ ['margin-bottom']: '15px' });
@@ -1120,15 +1342,14 @@ async function WikiDataChecker() {
 
 
 				// Now the full query
-				sparqlQuery = "SELECT DISTINCT ?item ?Title ?MPAA ?Genre ?Color ?Duration ?Language ?Country_of_Origin ?Country_of_OriginLabel ?Aspect_Ratio ?InstanceLabel ?Letterboxd_ID ?IMDB_ID ?TMDB_ID ?TMDBTV_ID ?Rotten_Tomatoes_ID ?Metacritic_ID ?Mubi_ID ?Senscritique_ID ?FilmAffinity_ID ?Plex_ID ?Allocine_Film_ID ?Allocine_TV_ID ?Douban_ID ?MyDramaList_ID ?MAL_ID ?Anilist_ID ?Anidb_ID ?Wikipedia ?Budget ?Box_OfficeUS ?Box_OfficeWW ?TV_Start ?TV_Start_Precision ?TV_End ?TV_End_Precision WHERE {\n" +
-				"  SERVICE wikibase:label { bd:serviceParam wikibase:language \"[AUTO_LANGUAGE],en\". }\n" +
+				sparqlQuery = "SELECT DISTINCT ?item ?Title ?Genre ?Color ?Duration ?Language ?Country_of_Origin ?Aspect_Ratio ?InstanceLabel ?Letterboxd_ID ?IMDB_ID ?TMDB_ID ?TMDBTV_ID ?Rotten_Tomatoes_ID ?Metacritic_ID ?Mubi_ID ?Senscritique_ID ?FilmAffinity_ID ?Plex_ID ?Allocine_Film_ID ?Allocine_TV_ID ?Douban_ID ?MyDramaList_ID ?MAL_ID ?Anilist_ID ?Anidb_ID ?TVDB_ID ?TVDBTV_ID ?Wikipedia ?Budget ?Box_OfficeUS ?Box_OfficeWW ?TV_Start ?TV_Start_Precision ?TV_End ?TV_End_Precision ?MPAA ?BBFC ?FSK ?NMHH ?CNC ?Filmiroda ?EIRIN ?INCAA ?JMK ?KMRB ?RTC ?FPB ?IGAC ?KAVI ?IMDA ?CHVRS ?RCQ ?KFCB ?ACB ?ClassInd WHERE {\n" +
+        		"  SERVICE wikibase:label { bd:serviceParam wikibase:language \"[AUTO_LANGUAGE],en\". }\n" +
 				"  \n" +
 				sparqlQuery +
 				"  \n" +
 				"  VALUES ?domestic { wd:Q30 wd:Q49 wd:Q2017699 }\n" +
 				"   \n" +
 				"  OPTIONAL { ?item wdt:P1476 ?Title. } \n" +
-				"  OPTIONAL { ?item wdt:P1657 ?MPAA. }\n" +
 				"  OPTIONAL { ?item wdt:P136 ?Genre. } \n" +
 				"  OPTIONAL { ?item wdt:P462 ?Color. } \n" +
 				"  OPTIONAL { ?item wdt:P2047 ?Duration. } \n" +
@@ -1154,6 +1375,30 @@ async function WikiDataChecker() {
 				"  OPTIONAL { ?item wdt:P5646 ?Anidb_ID. }\n" +
 				"  OPTIONAL { ?item wdt:P8729 ?Anilist_ID. }\n" +
 				"  OPTIONAL { ?item wdt:P4086 ?MAL_ID. }\n" +
+				"  OPTIONAL { ?item wdt:P12196 ?TVDB_ID. }\n" +
+				"  OPTIONAL { ?item wdt:P4835 ?TVDBTV_ID. }\n" +
+				"  \n" +
+				"  OPTIONAL { ?item wdt:P1657 ?MPAA. }\n" +
+				"  OPTIONAL { ?item wdt:P2629 ?BBFC. }\n" +
+				"  OPTIONAL { ?item wdt:P1981 ?FSK. }\n" +
+				"  OPTIONAL { ?item wdt:P2363 ?NMHH. }\n" +
+				"  OPTIONAL { ?item wdt:P2758 ?CNC. }\n" +
+				"  OPTIONAL { ?item wdt:P2747 ?Filmiroda. }\n" +
+				"  OPTIONAL { ?item wdt:P2756 ?EIRIN. }\n" +
+				"  OPTIONAL { ?item wdt:P3428 ?INCAA. }\n" +
+				"  OPTIONAL { ?item wdt:P3650 ?JMK. }\n" +
+				"  OPTIONAL { ?item wdt:P3818 ?KMRB. }\n" +
+				"  OPTIONAL { ?item wdt:P3834 ?RTC. }\n" +
+				"  OPTIONAL { ?item wdt:P4437 ?FPB. }\n" +
+				"  OPTIONAL { ?item wdt:P5150 ?IGAC. }\n" +
+				"  OPTIONAL { ?item wdt:P5152 ?KAVI. }\n" +
+				"  OPTIONAL { ?item wdt:P5201 ?IMDA. }\n" +
+				"  OPTIONAL { ?item wdt:P6657 ?CHVRS. }\n" +
+				"  OPTIONAL { ?item wdt:P6658 ?RCQ. }\n" +
+				"  OPTIONAL { ?item wdt:P10994 ?KFCB. }\n" +
+				"  OPTIONAL { ?item wdt:P3156 ?ACB. }\n" +
+				"  OPTIONAL { ?item wdt:P3216 ?ClassInd. }\n" +
+				"  \n" +
 				"  OPTIONAL {\n" +
 				"    ?Wikipedia schema:about ?item .\n" +
 				"    ?Wikipedia schema:inLanguage \"en\" .\n" +

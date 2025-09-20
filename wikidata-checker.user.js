@@ -116,7 +116,7 @@ async function WikiDataChecker() {
 				}
 
 				// Collect the Letterboxd Title and Year
-				if (document.querySelector("section.production-masthead") != null && this.letterboxdData.year == null && this.titleError == false) {
+				if (document.querySelector("section.production-masthead") != null && this.letterboxdData.year == '' && this.titleError == false) {
 					try {
 						// Collect Year and Title
 						this.letterboxdData.year = document.querySelector(".releasedate a").innerText;

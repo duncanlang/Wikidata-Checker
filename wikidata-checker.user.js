@@ -50,6 +50,8 @@ async function WikiDataChecker() {
 				allocineID: '',
 				allocineTVID: '',
 				doubanID: '',
+				traktFilmID: '',
+				traktID: '',
 				mydramalistID: '',
 				myanimelistID: '',
 				anilistID: '',
@@ -214,6 +216,8 @@ async function WikiDataChecker() {
 								this.wikiData.allocineID = letterboxd.helpers.parseWikiDataResult(data, 'Allocine_Film_ID', this.wikiData.allocineID);
 								this.wikiData.allocineTVID = letterboxd.helpers.parseWikiDataResult(data, 'Allocine_TV_ID', this.wikiData.allocineTVID);
 								this.wikiData.doubanID = letterboxd.helpers.parseWikiDataResult(data, 'Douban_ID', this.wikiData.doubanID);
+								this.wikiData.traktFilmID = letterboxd.helpers.parseWikiDataResult(data, 'TraktFilm_ID', this.wikiData.traktFilmID);
+								this.wikiData.traktID = letterboxd.helpers.parseWikiDataResult(data, 'Trakt_ID', this.wikiData.traktID);
 								this.wikiData.mydramalistID = letterboxd.helpers.parseWikiDataResult(data, 'MyDramaList_ID', this.wikiData.mydramalistID);
 								this.wikiData.myanimelistID = letterboxd.helpers.parseWikiDataResult(data, 'MAL_ID', this.wikiData.myanimelistID);
 								this.wikiData.anilistID = letterboxd.helpers.parseWikiDataResult(data, 'Anilist_ID', this.wikiData.anilistID);
@@ -637,17 +641,19 @@ async function WikiDataChecker() {
 				// TMDB ID
 				//***********************************************
 				if (this.isTV == true){
-					var tmdbUrl = 'https://www.themoviedb.org/movie/' + this.tmdbData.id
 					if (this.wikiData.tmdbTVID != ''){
+						var tmdbUrl = 'https://www.themoviedb.org/tv/' + this.tmdbData.id
 						ul.append(letterboxd.helpers.createReportBox("TMDB TV ID","No Issues","good",tmdbUrl));
 					}else{
+						var tmdbUrl = 'https://www.themoviedb.org/search/tv?query=' + this.letterboxdData.title;
 						ul.append(letterboxd.helpers.createReportBox("TMDB TV ID","Missing TMDB TV ID","bad",tmdbUrl));
 					}
 				}else{
-					var tmdbUrl = 'https://www.themoviedb.org/tv/' + this.tmdbData.id
 					if (this.wikiData.tmdbID != ''){
+						var tmdbUrl = 'https://www.themoviedb.org/movie/' + this.tmdbData.id
 						ul.append(letterboxd.helpers.createReportBox("TMDB Movie ID","No Issues","good",tmdbUrl));
 					}else{
+						var tmdbUrl = 'https://www.themoviedb.org/search/movie?query=' + this.letterboxdData.title;
 						ul.append(letterboxd.helpers.createReportBox("TMDB Movie ID","Missing TMDB Movie ID","bad",tmdbUrl));
 					}
 				}
@@ -756,20 +762,43 @@ async function WikiDataChecker() {
 				
 				// TVDB ID
 				//***********************************************
+				var tvdbUrl = 'https://thetvdb.com/search?query=' + this.letterboxdData.title;
 				if (this.isTV == true){
-					var tvdbUrl = 'https://thetvdb.com/dereferrer/series/' + this.wikiData.tvdbTVID;
 					if (this.wikiData.tvdbTVID != ''){
+						tvdbUrl = 'https://thetvdb.com/dereferrer/series/' + this.wikiData.tvdbTVID;
 						ul.append(letterboxd.helpers.createReportBox("TVDB TV ID","No Issues","good",tvdbUrl));
 					}else{
 						ul.append(letterboxd.helpers.createReportBox("TVDB TV ID","Missing TMDB TV ID","bad",tvdbUrl));
 					}
 				}else{
-					var tvdbUrl = 'https://thetvdb.com/dereferrer/movie/' + this.wikiData.tvdbID;
 					if (this.wikiData.tvdbID != ''){
+						tvdbUrl = 'https://thetvdb.com/dereferrer/movie/' + this.wikiData.tvdbID;
 						ul.append(letterboxd.helpers.createReportBox("TVDB Movie ID","No Issues","good",tvdbUrl));
 					}else{
 						ul.append(letterboxd.helpers.createReportBox("TVDB Movie ID","Missing TVDB Movie ID","bad",tvdbUrl));
 					}
+				}
+				
+				// Trakt Film ID (movie only)
+				//***********************************************
+				if (this.isTV == false){
+					var traktUrl = 'https://trakt.tv/search?query=' + this.letterboxdData.title;
+					if (this.wikiData.traktFilmID != ''){
+						traktUrl = 'https://trakt.tv/search/trakt/' + this.wikiData.traktFilmID + '?id_type=movie';
+						ul.append(letterboxd.helpers.createReportBox("Trakt Film ID","No Issues","good",traktUrl));
+					}else{
+						ul.append(letterboxd.helpers.createReportBox("Trakt Film ID","Missing Trakt Film ID","bad",traktUrl));
+					}
+				}
+				
+				// Trakt ID (for all Trakt items)
+				//***********************************************
+				var traktUrl = 'https://trakt.tv/search?query=' + this.letterboxdData.title;
+				if (this.wikiData.traktID != ''){
+					traktUrl = 'https://trakt.tv/' + this.wikiData.traktID;
+					ul.append(letterboxd.helpers.createReportBox("Trakt ID","No Issues","good",traktUrl));
+				}else{
+					ul.append(letterboxd.helpers.createReportBox("Trakt ID","Missing Trakt ID","bad",traktUrl));
 				}
 
 				// MyDramaList ID
@@ -951,133 +980,133 @@ async function WikiDataChecker() {
 				if (this.wikiData.bbfc != ''){
 					ul.append(letterboxd.helpers.createReportBox("BBFC", "No Issues", "good", imdbParentalUrl));
 				}else{
-					ul.append(letterboxd.helpers.createReportBox("BBFC", "Missing BBFC rating", "bad", imdbParentalUrl));
+					ul.append(letterboxd.helpers.createReportBox("BBFC", "Missing BBFC rating", "warn", imdbParentalUrl));
 				}
 
 				// FSK
 				if (this.wikiData.fsk != ''){
 					ul.append(letterboxd.helpers.createReportBox("FSK", "No Issues", "good", imdbParentalUrl));
 				}else{
-					ul.append(letterboxd.helpers.createReportBox("FSK" ,"Missing FSK rating", "bad", imdbParentalUrl));
+					ul.append(letterboxd.helpers.createReportBox("FSK" ,"Missing FSK rating", "warn", imdbParentalUrl));
 				}
 
 				// NMHH
 				if (this.wikiData.nmhh != ''){
 					ul.append(letterboxd.helpers.createReportBox("NMHH", "No Issues", "good", imdbParentalUrl));
 				}else{
-					ul.append(letterboxd.helpers.createReportBox("NMHH", "Missing NMHH rating", "bad", imdbParentalUrl));
+					ul.append(letterboxd.helpers.createReportBox("NMHH", "Missing NMHH rating", "warn", imdbParentalUrl));
 				}
 
 				// CNC
 				if (this.wikiData.cnc != ''){
 					ul.append(letterboxd.helpers.createReportBox("CNC", "No Issues", "good", imdbParentalUrl));
 				}else{
-					ul.append(letterboxd.helpers.createReportBox("CNC" ,"Missing CNC rating", "bad", imdbParentalUrl));
+					ul.append(letterboxd.helpers.createReportBox("CNC" ,"Missing CNC rating", "warn", imdbParentalUrl));
 				}
 
 				// Filmiroda
 				if (this.wikiData.filmiroda != ''){
 					ul.append(letterboxd.helpers.createReportBox("Filmiroda", "No Issues", "good", imdbParentalUrl));
 				}else{
-					ul.append(letterboxd.helpers.createReportBox("Filmiroda","Miss ing Filmiroda rating", "bad", imdbParentalUrl));
+					ul.append(letterboxd.helpers.createReportBox("Filmiroda","Miss ing Filmiroda rating", "warn", imdbParentalUrl));
 				}
 
 				// EIRIN
 				if (this.wikiData.eirin != ''){
 					ul.append(letterboxd.helpers.createReportBox("EIRIN", "No Issues", "good", imdbParentalUrl));
 				}else{
-					ul.append(letterboxd.helpers.createReportBox("EIRIN"," Missing EIRIN rating", "bad", imdbParentalUrl));
+					ul.append(letterboxd.helpers.createReportBox("EIRIN"," Missing EIRIN rating", "warn", imdbParentalUrl));
 				}
 
 				// INCAA
 				if (this.wikiData.incaa != ''){
 					ul.append(letterboxd.helpers.createReportBox("INCAA", "No Issues", "good", imdbParentalUrl));
 				}else{
-					ul.append(letterboxd.helpers.createReportBox("INCAA"," Missing INCAA rating", "bad", imdbParentalUrl));
+					ul.append(letterboxd.helpers.createReportBox("INCAA"," Missing INCAA rating", "warn", imdbParentalUrl));
 				}
 
 				// JMK
 				if (this.wikiData.jmk != ''){
 					ul.append(letterboxd.helpers.createReportBox("JMK", "No Issues", "good", imdbParentalUrl));
 				}else{
-					ul.append(letterboxd.helpers.createReportBox("JMK" ,"Missing JMK rating", "bad", imdbParentalUrl));
+					ul.append(letterboxd.helpers.createReportBox("JMK" ,"Missing JMK rating", "warn", imdbParentalUrl));
 				}
 
 				// KMRB
 				if (this.wikiData.kmrb != ''){
 					ul.append(letterboxd.helpers.createReportBox("KMRB", "No Issues", "good", imdbParentalUrl));
 				}else{
-					ul.append(letterboxd.helpers.createReportBox("KMRB", "Missing KMRB rating", "bad", imdbParentalUrl));
+					ul.append(letterboxd.helpers.createReportBox("KMRB", "Missing KMRB rating", "warn", imdbParentalUrl));
 				}
 
 				// RTC
 				if (this.wikiData.rtc != ''){
 					ul.append(letterboxd.helpers.createReportBox("RTC", "No Issues", "good", imdbParentalUrl));
 				}else{
-					ul.append(letterboxd.helpers.createReportBox("RTC" ,"Missing RTC rating", "bad", imdbParentalUrl));
+					ul.append(letterboxd.helpers.createReportBox("RTC" ,"Missing RTC rating", "warn", imdbParentalUrl));
 				}
 
 				// FPB
 				if (this.wikiData.fpb != ''){
 					ul.append(letterboxd.helpers.createReportBox("FPB", "No Issues", "good", imdbParentalUrl));
 				}else{
-					ul.append(letterboxd.helpers.createReportBox("FPB" ,"Missing FPB rating", "bad", imdbParentalUrl));
+					ul.append(letterboxd.helpers.createReportBox("FPB" ,"Missing FPB rating", "warn", imdbParentalUrl));
 				}
 
 				// IGAC
 				if (this.wikiData.igac != ''){
 					ul.append(letterboxd.helpers.createReportBox("IGAC", "No Issues", "good", imdbParentalUrl));
 				}else{
-					ul.append(letterboxd.helpers.createReportBox("IGAC", "Missing IGAC rating", "bad", imdbParentalUrl));
+					ul.append(letterboxd.helpers.createReportBox("IGAC", "Missing IGAC rating", "warn", imdbParentalUrl));
 				}
 
 				// KAVI
 				if (this.wikiData.kavi != ''){
 					ul.append(letterboxd.helpers.createReportBox("KAVI", "No Issues", "good", imdbParentalUrl));
 				}else{
-					ul.append(letterboxd.helpers.createReportBox("KAVI", "Missing KAVI rating", "bad", imdbParentalUrl));
+					ul.append(letterboxd.helpers.createReportBox("KAVI", "Missing KAVI rating", "warn", imdbParentalUrl));
 				}
 
 				// IMDA
 				if (this.wikiData.imda != ''){
 					ul.append(letterboxd.helpers.createReportBox("IMDA", "No Issues", "good", imdbParentalUrl));
 				}else{
-					ul.append(letterboxd.helpers.createReportBox("IMDA", "Missing IMDA rating", "bad", imdbParentalUrl));
+					ul.append(letterboxd.helpers.createReportBox("IMDA", "Missing IMDA rating", "warn", imdbParentalUrl));
 				}
 
 				// CHVRS
 				if (this.wikiData.chvrs != ''){
 					ul.append(letterboxd.helpers.createReportBox("CHVRS", "No Issues", "good", imdbParentalUrl));
 				}else{
-					ul.append(letterboxd.helpers.createReportBox("CHVRS"," Missing CHVRS rating", "bad", imdbParentalUrl));
+					ul.append(letterboxd.helpers.createReportBox("CHVRS"," Missing CHVRS rating", "warn", imdbParentalUrl));
 				}
 
 				// RCQ
 				if (this.wikiData.rcq != ''){
 					ul.append(letterboxd.helpers.createReportBox("RCQ", "No Issues", "good", imdbParentalUrl));
 				}else{
-					ul.append(letterboxd.helpers.createReportBox("RCQ" ,"Missing RCQ rating", "bad", imdbParentalUrl));
+					ul.append(letterboxd.helpers.createReportBox("RCQ" ,"Missing RCQ rating", "warn", imdbParentalUrl));
 				}
 
 				// KFCB
 				if (this.wikiData.kfcb != ''){
 					ul.append(letterboxd.helpers.createReportBox("KFCB", "No Issues", "good", imdbParentalUrl));
 				}else{
-					ul.append(letterboxd.helpers.createReportBox("KFCB", "Missing KFCB rating", "bad", imdbParentalUrl));
+					ul.append(letterboxd.helpers.createReportBox("KFCB", "Missing KFCB rating", "warn", imdbParentalUrl));
 				}
 
 				// ACB
 				if (this.wikiData.acb != ''){
 					ul.append(letterboxd.helpers.createReportBox("ACB", "No Issues", "good", imdbParentalUrl));
 				}else{
-					ul.append(letterboxd.helpers.createReportBox("ACB" ,"Missing ACB rating", "bad", imdbParentalUrl));
+					ul.append(letterboxd.helpers.createReportBox("ACB" ,"Missing ACB rating", "warn", imdbParentalUrl));
 				}
 
 				// ClassInd
 				if (this.wikiData.classind != ''){
 					ul.append(letterboxd.helpers.createReportBox("ClassInd", "No Issues", "good", imdbParentalUrl));
 				}else{
-					ul.append(letterboxd.helpers.createReportBox("ClassInd","Mis sing ClassInd rating", "bad", imdbParentalUrl));
+					ul.append(letterboxd.helpers.createReportBox("ClassInd","Mis sing ClassInd rating", "warn", imdbParentalUrl));
 				}
 
 			},
@@ -1342,7 +1371,7 @@ async function WikiDataChecker() {
 
 
 				// Now the full query
-				sparqlQuery = "SELECT DISTINCT ?item ?Title ?Genre ?Color ?Duration ?Language ?Country_of_Origin ?Aspect_Ratio ?InstanceLabel ?Letterboxd_ID ?IMDB_ID ?TMDB_ID ?TMDBTV_ID ?Rotten_Tomatoes_ID ?Metacritic_ID ?Mubi_ID ?Senscritique_ID ?FilmAffinity_ID ?Plex_ID ?Allocine_Film_ID ?Allocine_TV_ID ?Douban_ID ?MyDramaList_ID ?MAL_ID ?Anilist_ID ?Anidb_ID ?TVDB_ID ?TVDBTV_ID ?Wikipedia ?Budget ?Box_OfficeUS ?Box_OfficeWW ?TV_Start ?TV_Start_Precision ?TV_End ?TV_End_Precision ?MPAA ?BBFC ?FSK ?NMHH ?CNC ?Filmiroda ?EIRIN ?INCAA ?JMK ?KMRB ?RTC ?FPB ?IGAC ?KAVI ?IMDA ?CHVRS ?RCQ ?KFCB ?ACB ?ClassInd WHERE {\n" +
+				sparqlQuery = "SELECT DISTINCT ?item ?Title ?Genre ?Color ?Duration ?Language ?Country_of_Origin ?Country_of_OriginLabel ?Aspect_Ratio ?InstanceLabel ?Letterboxd_ID ?IMDB_ID ?TMDB_ID ?TMDBTV_ID ?Rotten_Tomatoes_ID ?Metacritic_ID ?Mubi_ID ?Senscritique_ID ?FilmAffinity_ID ?Plex_ID ?Allocine_Film_ID ?Allocine_TV_ID ?Douban_ID ?MyDramaList_ID ?MAL_ID ?Anilist_ID ?Anidb_ID ?TVDB_ID ?TVDBTV_ID ?TraktFilm_ID ?Trakt_ID ?Wikipedia ?Budget ?Box_OfficeUS ?Box_OfficeWW ?TV_Start ?TV_Start_Precision ?TV_End ?TV_End_Precision ?MPAA ?BBFC ?FSK ?NMHH ?CNC ?Filmiroda ?EIRIN ?INCAA ?JMK ?KMRB ?RTC ?FPB ?IGAC ?KAVI ?IMDA ?CHVRS ?RCQ ?KFCB ?ACB ?ClassInd WHERE {\n" +
         		"  SERVICE wikibase:label { bd:serviceParam wikibase:language \"[AUTO_LANGUAGE],en\". }\n" +
 				"  \n" +
 				sparqlQuery +
@@ -1377,6 +1406,8 @@ async function WikiDataChecker() {
 				"  OPTIONAL { ?item wdt:P4086 ?MAL_ID. }\n" +
 				"  OPTIONAL { ?item wdt:P12196 ?TVDB_ID. }\n" +
 				"  OPTIONAL { ?item wdt:P4835 ?TVDBTV_ID. }\n" +
+				"  OPTIONAL { ?item wdt:P12492 ?TraktFilm_ID. }\n" +
+				"  OPTIONAL { ?item wdt:P8013 ?Trakt_ID. }\n" +
 				"  \n" +
 				"  OPTIONAL { ?item wdt:P1657 ?MPAA. }\n" +
 				"  OPTIONAL { ?item wdt:P2629 ?BBFC. }\n" +
